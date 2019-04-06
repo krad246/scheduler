@@ -1,33 +1,31 @@
-#include "clocks.h"
-#include "task.h"
+#include <depends.h>
 
-static volatile uint32_t x, y = 0;
+static volatile std::uint32_t p = 0;
+static volatile std::uint32_t q = 0;
 
-void idle1(void) {
+void *foo(void *arg) {
 	while (1) {
-		x++;
-
-		P1OUT ^= BIT0;
+		p++;
 	}
-}
-
-void idle2(void) {
-	while (1) {
-		y++;
-		P1OUT ^= BIT6;
-	}
-}
-
-void idle3(void) {
-	while (1);
-}
-
-int main(void) {
-	tq::addTask<idle1>();
-	tq::addTask<idle2>();
-	tq::addTask<idle3, 29 , 10>();
-	P1DIR |= BIT0 | BIT6;
-	cl::initClocks();
 	return 0;
 }
 
+void *bar(void *arg) {
+	while (1) {
+		q++;
+	}
+	return 0;
+}
+
+int main(void) {
+	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
+	TaskQueue x;
+	x.addTask(foo, 7);
+	x.addTask(bar);
+
+	Scheduler sched(x);
+	sched.start();
+
+	_low_power_mode_0();
+	return 0;
+}
