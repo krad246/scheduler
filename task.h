@@ -23,8 +23,7 @@ public:
 	~Task();
 
 	inline bool complete(void) {
-		return KernelStackPointer[13] == GIE;
-//		return KernelStackPointer[13] != KernelStackPointer[14] && KernelStackPointer[13] != KernelStackPointer[15];
+		return KernelStackPointer[13] < 256;
 	}
 
 	static void *idle(void *arg);

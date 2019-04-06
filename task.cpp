@@ -40,7 +40,6 @@ Task::~Task() {
 void *Task::idle(void *arg) {
 	_low_power_mode_0();
 //	while (1);
-	return 0;
 }
 
 void TaskQueue::addTask(func f, std::size_t stackSize, std::size_t priority) {
