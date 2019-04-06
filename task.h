@@ -9,6 +9,7 @@
 #define TASK_H_
 
 #include <msp430.h>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <List.h>
@@ -26,9 +27,6 @@ public:
 
 private:
 	friend class Scheduler;
-
-	std::uint16_t *KernelStack;
-	std::uint16_t *UserStack;
 
 	std::uint16_t *KernelStackPointer;
 	std::uint16_t *UserStackPointer;

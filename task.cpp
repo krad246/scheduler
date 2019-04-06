@@ -7,10 +7,10 @@
 
 #include <Task.h>
 
-Task::Task() : UserStack(nullptr), KernelStack(nullptr), UserStackPointer(nullptr), KernelStackPointer(nullptr), priority(1) {}
+Task::Task() : UserStackPointer(nullptr), KernelStackPointer(nullptr), priority(1) {}
 
 Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(priority) {
-	KernelStack = new std::uint16_t[16];
+	std::uint16_t *KernelStack = new std::uint16_t[16];
 
 	KernelStack[15] = (std::uint16_t) f;
 	KernelStack[14] = (std::uint16_t) Task::idle;
@@ -25,14 +25,16 @@ Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(prior
 
 	const std::uint16_t NumWordsAllocated = stackSize > 0 ? 1 + (stackSize >> 1) : 0;
 
-	UserStack = new std::uint16_t[NumWordsAllocated];
+	std::uint16_t *UserStack = new std::uint16_t[NumWordsAllocated];
+	std::fill_n(UserStack, NumWordsAllocated, 0x0000);
+
 	UserStackPointer = UserStack + NumWordsAllocated;
 //	KernelStackPointer[12] = (std::uint16_t) UserStackPointer;
 }
 
 Task::~Task() {
-	delete UserStack;
-	delete KernelStack;
+	delete UserStackPointer;
+	delete KernelStackPointer;
 }
 
 void *Task::idle(void *arg) {
