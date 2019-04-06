@@ -35,10 +35,20 @@ Task *Scheduler::lottery(Scheduler *arg) {
 Task *Scheduler::roundRobin(Scheduler *arg) {
 	const Scheduler& sched = *arg;
 
-	static std::size_t iter = 0;
-	Task *runnable = sched.queue[iter];
+	const std::size_t count = sched.queue.size();
+	static ListIterator<Task *> toRun = sched.queue.begin();
 
-	if (++iter >= sched.queue.size()) iter = 0;
+	Task *runnable = *toRun;
+	toRun++;
+	if ((*toRun)->KernelStackPointer[15] == (std::uint16_t) Task::idle) {
+		toRun++;
+	}
+
+	if (toRun.pos() >= count) {
+		toRun = sched.queue.begin();
+	}
+
+	runnable = *toRun;
 
 	return runnable;
 }

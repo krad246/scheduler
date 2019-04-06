@@ -41,6 +41,8 @@ public:
 	ListIterator<T>& operator--();
 	ListIterator<T> operator--(int);
 
+	std::size_t pos(void);
+
 	T& operator*();
 
 private:
@@ -177,6 +179,11 @@ inline ListIterator<T> operator-(ListIterator<T> lhs, std::size_t rhs) {
 template <class T>
 inline T& ListIterator<T>::operator*() {
 	return node->get();
+}
+
+template <class T>
+inline std::size_t ListIterator<T>::pos(void) {
+	return idx;
 }
 
 template <class T>

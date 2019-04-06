@@ -38,8 +38,8 @@ Task::~Task() {
 }
 
 void *Task::idle(void *arg) {
-//	_low_power_mode_0();
-	while (1);
+	_low_power_mode_0();
+//	while (1);
 	return 0;
 }
 

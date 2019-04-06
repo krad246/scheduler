@@ -1,5 +1,7 @@
 #include <depends.h>
 
+// Test functions
+
 static volatile std::uint32_t p = 0;
 static volatile std::uint32_t q = 0;
 
