@@ -49,8 +49,8 @@ private:
 	ListIterator();
 	ListIterator(ListNode<T> *ref);
 
-	ListNode<T> *iter;
-	std::size_t idx = 0;
+	ListNode<T> *node;
+	std::size_t idx;
 };
 
 template <class T>
@@ -68,8 +68,8 @@ public:
 	T& pop_back(void);
 	T& pop_front(void);
 
-	T& pop(std::size_t idx);
-	T& pop(ListIterator<T> &location);
+	T pop(std::size_t idx);
+	T pop(ListIterator<T> &NodeToRemove);
 
 	void clear(void);
 
@@ -113,14 +113,14 @@ List<T>::~List() {
 }
 
 template <class T>
-ListIterator<T>::ListIterator() : iter(nullptr) { }
+ListIterator<T>::ListIterator() : node(nullptr) { }
 
 template <class T>
-ListIterator<T>::ListIterator(ListNode<T> *ref) : iter(ref) { }
+ListIterator<T>::ListIterator(ListNode<T> *ref) : node(ref) { }
 
 template <class T>
 inline ListIterator<T>& ListIterator<T>::operator++() {
-	iter = iter->next;
+	node = node->next;
 	++idx;
 	return *this;
 }
@@ -134,7 +134,7 @@ inline ListIterator<T> ListIterator<T>::operator++(int) {
 
 template <class T>
 inline ListIterator<T>& ListIterator<T>::operator--() {
-	iter = iter->prev;
+	node = node->prev;
 	--idx;
 	return *this;
 }
@@ -176,21 +176,21 @@ inline ListIterator<T> operator-(ListIterator<T> lhs, std::size_t rhs) {
 
 template <class T>
 inline T& ListIterator<T>::operator*() {
-	return iter->get();
+	return node->get();
 }
 
 template <class T>
-ListIterator<T> List<T>::begin(void) {
-	volatile ListNode<T> *x = head;
-	ListIterator<T> iter =  ListIterator<T>(head);
-	return iter;
+inline ListIterator<T> List<T>::begin(void) {
+	ListIterator<T> HeadIterator =  ListIterator<T>(head);
+	HeadIterator.idx = 0;
+	return HeadIterator;
 }
 
 template <class T>
 inline ListIterator<T> List<T>::end(void) {
-	ListIterator<T> iter =  ListIterator<T>(tail);
-	iter.idx = count - 1;
-	return iter;
+	ListIterator<T> TailIterator =  ListIterator<T>(tail);
+	TailIterator.idx = count - 1;
+	return TailIterator;
 }
 
 template <class T>
@@ -272,39 +272,46 @@ T& List<T>::pop_front(void) {
 }
 
 template <class T>
-T& List<T>::pop(std::size_t idx) {
+T List<T>::pop(std::size_t idx) {
 	T ret;
 
-	ListIterator<T> listIt = begin();
+	ListIterator<T> HeadIterator = begin();
 	for (std::size_t i = 0; i < idx; ++i) {
-		++iter;
+		++HeadIterator;
 	}
 
-	ListNode<T> *left = listIt.iter->prev;
-	ListNode<T> *right = listIt.iter->next;
+	ListNode<T> *left = HeadIterator.node->prev;
+	ListNode<T> *right = HeadIterator.node->next;
 
 	left->next = right;
 	right->prev = left;
 
-	ret = *listIt;
-	delete listIt.iter;
+	ret = *HeadIterator;
+	delete HeadIterator.node;
+
+	count--;
 
 	return ret;
 }
 
 template <class T>
-T& List<T>::pop(ListIterator<T> &location) {
+T List<T>::pop(ListIterator<T> &NodeToRemove) {
 	T ret;
 
-	ListIterator<T> listIt = begin();
-	ListNode<T> *left = listIt.iter->prev;
-	ListNode<T> *right = listIt.iter->next;
+	ListNode<T> *left = NodeToRemove.node->prev;
+	ListNode<T> *right = NodeToRemove.node->next;
 
-	left->next = right;
-	right->prev = left;
+	if (left == nullptr) ret = pop_front();
+	else if (right == nullptr) ret = pop_back();
+	else {
+		left->next = right;
+		right->prev = left;
 
-	ret = *listIt;
-	delete listIt.iter;
+		ret = *NodeToRemove;
+		delete NodeToRemove.node;
+
+		count--;
+	}
 
 	return ret;
 }
@@ -326,22 +333,22 @@ inline T& List<T>::back(void) {
 
 template <class T>
 T& List<T>::operator[](std::size_t idx) {
-	ListIterator<T> iter = begin();
-	for (std::size_t i = 0; i < count; ++i) {
-		++iter;
+	ListIterator<T> HeadIterator = begin();
+	for (std::size_t i = 0; i < idx; ++i) {
+		++HeadIterator;
 	}
 
-	return *iter;
+	return *HeadIterator;
 }
 
 template <class T>
 ListIterator<T> List<T>::find(T& data) {
-	ListIterator<T> iter = begin();
+	ListIterator<T> HeadIterator = begin();
 	for (std::size_t i = 0; i < count; ++i) {
-		++iter;
+		++HeadIterator;
 	}
 
-	return iter;
+	return HeadIterator;
 }
 
 template <class T>

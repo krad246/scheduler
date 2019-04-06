@@ -10,8 +10,8 @@
 
 #include <msp430.h>
 #include <Math.h>
-#include <Task.h>
 #include <SystemClock.h>
+#include "Task.h"
 
 class TaskQueue;
 class SystemClock;
@@ -39,6 +39,9 @@ private:
 
 	static inline void popAutomaticallyPushedRegisters(void) {
 		asm volatile ( \
+			"   pop r8 \n" \
+			"   pop r9 \n" \
+			"	pop r10 \n" \
 			"   pop r11 \n" \
 			"   pop r12 \n" \
 			"	pop r13 \n" \
@@ -97,6 +100,20 @@ private:
 		_set_SP_register((std::uint16_t) runnable->KernelStackPointer);
 		restoreContext();
 		jumpToNextTask();
+	}
+
+	static inline void freeCompletedTasks(void) {
+		ListIterator<Task *> TaskIterator = Scheduler::sched->queue.begin();
+		for (std::size_t i = 0; i < Scheduler::sched->queue.size(); ++i) {
+			if ((*TaskIterator)->complete()) {
+				ListIterator<Task *> TaskToBeFreed = TaskIterator;
+				TaskIterator++;
+				Scheduler::sched->queue.pop(TaskToBeFreed);
+			} else {
+				(*TaskIterator)->KernelStackPointer[15] = (*TaskIterator)->KernelStackPointer[13];
+				TaskIterator++;
+			}
+		}
 	}
 
 	static interrupt void preempt(void);

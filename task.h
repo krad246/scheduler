@@ -24,6 +24,7 @@ public:
 
 	inline bool complete(void) {
 		return KernelStackPointer[13] == GIE;
+//		return KernelStackPointer[13] != KernelStackPointer[14] && KernelStackPointer[13] != KernelStackPointer[15];
 	}
 
 	static void *idle(void *arg);
@@ -43,8 +44,6 @@ private:
 
 class TaskQueue : List<Task *> {
 public:
-	TaskQueue();
-	~TaskQueue();
 	void addTask(func f, std::size_t stackSize = 0, std::size_t priority = 1);
 
 private:
