@@ -63,7 +63,6 @@ Scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcx
 Scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/support/ti/support.h
 Scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/__undef_macros
 Scheduler.obj: C:/Users/krad2/workspace_v8/sched/List.h
-Scheduler.obj: C:/Users/krad2/workspace_v8/sched/Scheduler.h
 Scheduler.obj: C:/Users/krad2/workspace_v8/sched/SystemClock.h
 
 ../Scheduler.cpp: 
@@ -129,5 +128,4 @@ C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/__undef_macro
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/support/ti/support.h: 
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/__undef_macros: 
 C:/Users/krad2/workspace_v8/sched/List.h: 
-C:/Users/krad2/workspace_v8/sched/Scheduler.h: 
 C:/Users/krad2/workspace_v8/sched/SystemClock.h: 

@@ -32,7 +32,7 @@ int main(void) {
 	x.addTask(bar);
 	P1DIR |= (BIT0 | BIT6);
 	Scheduler sched(x);
-	sched.start(8000000);
+	sched.start(1000000);
 
 	_low_power_mode_0();
 	return 0;

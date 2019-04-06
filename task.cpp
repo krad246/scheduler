@@ -38,7 +38,7 @@ Task::~Task() {
 }
 
 void *Task::idle(void *arg) {
-	while (1);
+	_low_power_mode_0();
 	return 0;
 }
 

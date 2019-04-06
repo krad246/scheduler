@@ -16,6 +16,14 @@ class SystemClock {
 public:
 	static void StartSystemClock(std::size_t frequency = (std::size_t) 1000000);
 	static void StartCrystalOscillator(std::size_t frequency = (std::size_t) 1000000);
+	static inline void UpdateSystemTime(void) {
+		micros += microsPerTick;
+		fractionalMillis += microsPerTick;
+		if (fractionalMillis > 1000) {
+			fractionalMillis -= 1000;
+			millis += 1;
+		}
+	}
 
 private:
 	friend class Scheduler;

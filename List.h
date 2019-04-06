@@ -36,6 +36,21 @@ private:
 template <class T>
 class ListIterator {
 public:
+	ListIterator<T>& operator++();
+	ListIterator<T> operator++(int);
+	ListIterator<T>& operator--();
+	ListIterator<T> operator--(int);
+
+	T& operator*();
+
+private:
+	friend class List<T>;
+
+	ListIterator();
+	ListIterator(ListNode<T> *ref);
+
+	ListNode<T> *iter;
+	std::size_t idx = 0;
 };
 
 template <class T>
@@ -44,17 +59,25 @@ public:
 	List();
 	~List();
 
+	ListIterator<T> begin(void);
+	ListIterator<T> end(void);
+
 	void push_back(T& data);
 	void push_front(T& data);
 
 	T& pop_back(void);
 	T& pop_front(void);
+
 	T& pop(std::size_t idx);
+	T& pop(ListIterator<T> &location);
+
 	void clear(void);
 
 	T& front(void);
 	T& back(void);
+
 	T& operator[](std::size_t idx);
+	ListIterator<T> find(T& data);
 
 	std::size_t size(void);
 
@@ -77,7 +100,7 @@ template <class T>
 ListNode<T>::~ListNode() { }
 
 template <class T>
-T& ListNode<T>::get(void) {
+inline T& ListNode<T>::get(void) {
 	return data;
 }
 
@@ -87,6 +110,87 @@ List<T>::List() : head(nullptr), tail(nullptr), count(0) { }
 template <class T>
 List<T>::~List() {
 	clear();
+}
+
+template <class T>
+ListIterator<T>::ListIterator() : iter(nullptr) { }
+
+template <class T>
+ListIterator<T>::ListIterator(ListNode<T> *ref) : iter(ref) { }
+
+template <class T>
+inline ListIterator<T>& ListIterator<T>::operator++() {
+	iter = iter->next;
+	++idx;
+	return *this;
+}
+
+template <class T>
+inline ListIterator<T> ListIterator<T>::operator++(int) {
+	ListIterator<T> tmp = *this;
+	operator++();
+	return tmp;
+}
+
+template <class T>
+inline ListIterator<T>& ListIterator<T>::operator--() {
+	iter = iter->prev;
+	--idx;
+	return *this;
+}
+
+template <class T>
+inline ListIterator<T> ListIterator<T>::operator--(int) {
+	ListIterator<T> tmp = *this;
+	operator--();
+	return tmp;
+}
+
+template <class T>
+inline ListIterator<T>& operator+=(ListIterator<T>& lhs, std::size_t rhs) {
+   for (std::size_t i = 0; i < rhs; i++) {
+	   ++lhs;
+   }
+
+   return lhs;
+}
+
+template <class T>
+inline ListIterator<T> operator+(ListIterator<T> lhs, std::size_t rhs) {
+   return lhs += rhs;
+}
+
+template <class T>
+inline ListIterator<T>& operator-=(ListIterator<T>& lhs, std::size_t rhs) {
+   for (std::size_t i = 0; i < rhs; i++) {
+	   --lhs;
+   }
+
+   return lhs;
+}
+
+template <class T>
+inline ListIterator<T> operator-(ListIterator<T> lhs, std::size_t rhs) {
+   return lhs -= rhs;
+}
+
+template <class T>
+inline T& ListIterator<T>::operator*() {
+	return iter->get();
+}
+
+template <class T>
+ListIterator<T> List<T>::begin(void) {
+	volatile ListNode<T> *x = head;
+	ListIterator<T> iter =  ListIterator<T>(head);
+	return iter;
+}
+
+template <class T>
+inline ListIterator<T> List<T>::end(void) {
+	ListIterator<T> iter =  ListIterator<T>(tail);
+	iter.idx = count - 1;
+	return iter;
 }
 
 template <class T>
@@ -169,23 +273,40 @@ T& List<T>::pop_front(void) {
 
 template <class T>
 T& List<T>::pop(std::size_t idx) {
-	ListNode<T> ret;
+	T ret;
 
-	ListNode<T> *iter = head;
+	ListIterator<T> listIt = begin();
 	for (std::size_t i = 0; i < idx; ++i) {
-		iter = iter->next;
+		++iter;
 	}
 
-	ListNode<T> *left = iter->prev;
-	ListNode<T> *right = iter->next;
+	ListNode<T> *left = listIt.iter->prev;
+	ListNode<T> *right = listIt.iter->next;
 
 	left->next = right;
 	right->prev = left;
 
-	ret = *iter;
-	delete iter;
+	ret = *listIt;
+	delete listIt.iter;
 
-	return ret.get();
+	return ret;
+}
+
+template <class T>
+T& List<T>::pop(ListIterator<T> &location) {
+	T ret;
+
+	ListIterator<T> listIt = begin();
+	ListNode<T> *left = listIt.iter->prev;
+	ListNode<T> *right = listIt.iter->next;
+
+	left->next = right;
+	right->prev = left;
+
+	ret = *listIt;
+	delete listIt.iter;
+
+	return ret;
 }
 
 template <class T>
@@ -194,27 +315,37 @@ void List<T>::clear(void) {
 }
 
 template <class T>
-T& List<T>::front(void) {
+inline T& List<T>::front(void) {
 	return head->get();
 }
 
 template <class T>
-T& List<T>::back(void) {
+inline T& List<T>::back(void) {
 	return tail->get();
 }
 
 template <class T>
 T& List<T>::operator[](std::size_t idx) {
-	ListNode<T> *iter = head;
-	for (std::size_t i = 0; i < idx; ++i) {
-		iter = iter->next;
+	ListIterator<T> iter = begin();
+	for (std::size_t i = 0; i < count; ++i) {
+		++iter;
 	}
 
-	return iter->get();
+	return *iter;
 }
 
 template <class T>
-std::size_t List<T>::size(void) {
+ListIterator<T> List<T>::find(T& data) {
+	ListIterator<T> iter = begin();
+	for (std::size_t i = 0; i < count; ++i) {
+		++iter;
+	}
+
+	return iter;
+}
+
+template <class T>
+inline std::size_t List<T>::size(void) {
 	return count;
 }
 

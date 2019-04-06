@@ -13,7 +13,6 @@
 #include <Task.h>
 #include <SystemClock.h>
 
-class Task;
 class TaskQueue;
 class SystemClock;
 
@@ -36,7 +35,6 @@ private:
 	static std::uint16_t *SchedStackPointer;
 
 	TaskQueue &queue;
-//	TaskQueue sleepQueue;
 	SchedulingMethod callback;
 
 	static inline void popAutomaticallyPushedRegisters(void) {
@@ -89,12 +87,14 @@ private:
 		);
 	}
 
-	static inline void enterIsr(void) {
+	static inline void enterKernelCode(void) {
 		popAutomaticallyPushedRegisters();
 		saveContext();
+		_set_SP_register((std::uint16_t) Scheduler::SchedStackPointer);
 	}
 
-	static inline void exitIsr(void) {
+	static inline void exitKernelCode(Task *runnable) {
+		_set_SP_register((std::uint16_t) runnable->KernelStackPointer);
 		restoreContext();
 		jumpToNextTask();
 	}

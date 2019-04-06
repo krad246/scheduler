@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <List.h>
-#include <Scheduler.h>
 
 using func = void *(*)(void *);
 
@@ -22,6 +21,10 @@ public:
 	Task();
 	Task(func f, std::size_t stackSize = 0, std::size_t priority = 1);
 	~Task();
+
+	inline bool complete(void) {
+		return KernelStackPointer[13] == GIE;
+	}
 
 	static void *idle(void *arg);
 

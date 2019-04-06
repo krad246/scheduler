@@ -61,10 +61,6 @@ Task.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/__u
 Task.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/support/ti/support.h
 Task.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/__undef_macros
 Task.obj: C:/Users/krad2/workspace_v8/sched/List.h
-Task.obj: C:/Users/krad2/workspace_v8/sched/Scheduler.h
-Task.obj: C:/Users/krad2/workspace_v8/sched/Math.h
-Task.obj: C:/Users/krad2/workspace_v8/sched/Task.h
-Task.obj: C:/Users/krad2/workspace_v8/sched/SystemClock.h
 
 ../Task.cpp: 
 C:/Users/krad2/workspace_v8/sched/Task.h: 
@@ -127,7 +123,3 @@ C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/__undef_macro
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/support/ti/support.h: 
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/__undef_macros: 
 C:/Users/krad2/workspace_v8/sched/List.h: 
-C:/Users/krad2/workspace_v8/sched/Scheduler.h: 
-C:/Users/krad2/workspace_v8/sched/Math.h: 
-C:/Users/krad2/workspace_v8/sched/Task.h: 
-C:/Users/krad2/workspace_v8/sched/SystemClock.h: 
