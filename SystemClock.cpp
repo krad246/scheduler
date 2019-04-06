@@ -30,6 +30,8 @@ void SystemClock::StartSystemClock(std::size_t frequency) {
 		DCOCTL = CALDCO_16MHZ;
 		BCSCTL1 = CALBC1_16MHZ;
 		break;
+	default:
+		_low_power_mode_4();
 	}
 
 	SystemClock::microsPerTick = frequency == 1000000 ? 512 : 8192;
@@ -37,8 +39,6 @@ void SystemClock::StartSystemClock(std::size_t frequency) {
 	if (frequency == 1000000) WDTCTL = WDT_MDLY_0_5;
 	else WDTCTL = WDT_MDLY_8;
 	IE1 |= WDTIE;
-
-
 }
 
 void SystemClock::StartCrystalOscillator(std::size_t frequency) {
