@@ -62,7 +62,7 @@ private:
 	friend class Scheduler;
 
 	std::uint16_t *KernelStackPointer;
-	std::uint16_t *UserStackPointer;
+//	std::uint16_t *UserStackPointer;
 
 	std::size_t priority;
 

@@ -64,8 +64,8 @@ Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(prior
 	 * Allocate a user stack, but move the stack pointer up since no allocations were made.
 	 */
 
-	std::uint16_t *UserStack = new std::uint16_t[NumWordsAllocated];
-	UserStackPointer = UserStack + NumWordsAllocated;
+//	std::uint16_t *UserStack = new std::uint16_t[NumWordsAllocated];
+//	UserStackPointer = UserStack + NumWordsAllocated;
 }
 
 /**
@@ -73,7 +73,7 @@ Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(prior
  */
 
 Task::~Task() {
-	delete UserStackPointer;
+//	delete UserStackPointer;
 	delete KernelStackPointer;
 }
 

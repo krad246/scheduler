@@ -144,7 +144,7 @@ all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 sched.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: MSP430 Linker'
-	"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/bin/cl430" -vmsp -O4 --opt_for_speed=5 --use_hw_mpy=none --advice:power="all" --define=__MSP430G2553__ -g --cpp_default --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"sched.map" --heap_size=350 --stack_size=80 -i"C:/ti/ccsv8/ccs_base/msp430/include" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/lib" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="sched_linkInfo.xml" --use_hw_mpy=none --rom_model -o "sched.out" $(ORDERED_OBJS)
+	"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/bin/cl430" -vmsp -O4 --opt_for_speed=5 --use_hw_mpy=none --advice:power="all" --define=__MSP430G2553__ -g --cpp_default --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"sched.map" --heap_size=384 --stack_size=80 -i"C:/ti/ccsv8/ccs_base/msp430/include" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/lib" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="sched_linkInfo.xml" --use_hw_mpy=none --rom_model -o "sched.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 

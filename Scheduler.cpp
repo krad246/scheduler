@@ -148,12 +148,12 @@ Task *Scheduler::roundRobin(Scheduler *arg) {
 Scheduler::Scheduler(TaskQueue& tasks, SchedulingMethod method) : queue(tasks) {
 
 	/**
-	 * Grab the list of tasks and inject the idle hook into it. The system must always be running
+	 * Grab the list of tasks and inject the idle hook into it if it is empty. The system must always be running
 	 * something.
 	 */
 
 	queue = tasks;
-	queue.addTask(Task::idle);
+	if (tasks.size() == 0) queue.addTask(Task::idle);
 
 	/**
 	 * Set the scheduling method.
