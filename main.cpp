@@ -19,9 +19,6 @@ void bar(void) {
 }
 
 void baz(void) {
-	while (1) {
-		z++;
-	}
 }
 
 int main(void) {

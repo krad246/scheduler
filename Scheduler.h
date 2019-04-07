@@ -233,9 +233,10 @@ private:
 				TaskIterator++;
 
 				/**
-				 * Pop the task from the task queue.
+				 * Pop the task from the task queue and remove its tickets.
 				 */
 
+				sched->tickets -= (*TaskToBeFreed)->priority;
 				Scheduler::sched->queue.pop(TaskToBeFreed);
 			} else {
 
