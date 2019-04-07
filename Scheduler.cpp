@@ -178,7 +178,6 @@ Scheduler::Scheduler(TaskQueue& tasks, SchedulingMethod method) : queue(tasks) {
 		task++;
 	}
 
-
 	/**
 	 * Set the scheduling method.
 	 */
@@ -217,14 +216,14 @@ interrupt void Scheduler::preempt(void) {
 	 * Switch modes.
 	 */
 
-	enterKernelMode();
+	Scheduler::enterKernelMode();
 
 	/**
 	 * Do some cleanup.
 	 */
 
 	SystemClock::UpdateSystemTime();
-	freeCompletedTasks();
+	Scheduler::freeCompletedTasks();
 
 	/**
 	 * Prep for the next function.
@@ -236,5 +235,5 @@ interrupt void Scheduler::preempt(void) {
 	 * Jump to the next function.
 	 */
 
-	exitKernelMode(runnable);
+	Scheduler::exitKernelMode(runnable);
 }

@@ -59,7 +59,6 @@ public:
 	static void idle(void);
 
 private:
-	friend class TaskQueue;
 	friend class Scheduler;
 
 	std::uint16_t *Stack;
