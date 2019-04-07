@@ -59,10 +59,11 @@ public:
 	static void idle(void);
 
 private:
+	friend class TaskQueue;
 	friend class Scheduler;
 
+	std::uint16_t *Stack;
 	std::uint16_t *KernelStackPointer;
-	std::uint16_t *UserStackPointer;
 
 	std::size_t priority;
 
@@ -89,6 +90,7 @@ public:
 
 private:
 	friend class Scheduler;
+
 };
 
 #endif /* TASK_H_ */

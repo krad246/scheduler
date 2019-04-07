@@ -1,1 +1,1 @@
-"./Math.obj" "./Scheduler.obj" "./SystemClock.obj" "./Task.obj" "./main.obj" "../lnk_msp430g2553.cmd" -llibc.a 
+"./Scheduler.obj" "./SystemClock.obj" "./Task.obj" "./main.obj" "../lnk_msp430g2553.cmd" -llibc.a 

@@ -11,25 +11,93 @@ Scheduler *Scheduler::sched = nullptr;
 std::uint16_t *Scheduler::SchedStackPointer = nullptr;
 
 Task *Scheduler::lottery(Scheduler *arg) {
+
+	/**
+	 * Grab the scheduler instance.
+	 */
+
 	const Scheduler& sched = *arg;
 
-	const std::uint16_t draw = rand<16>();
-	std::size_t ticketSum = 0;
+	/**
+	 * Maintain an iterator that loops through and a count of how many tasks to go through.
+	 */
 
-	std::size_t size = sched.queue.size();
-	for (std::size_t i = 0;  i < size; ++i) {
-		ticketSum += sched.queue[i]->priority;
+	ListIterator<Task *> task = sched.queue.begin();
+	const std::size_t sz = sched.queue.size();
+
+	/**
+	 * If idle() is the only runnable function at all, then we just return the idle hook.
+	 */
+
+	const std::size_t numSleeping = sched.numSleeping;
+	if (numSleeping == sz - 1) {
+		return *task;
 	}
+
+	/**
+	 * Loop through the interval [0, pool) and see if the draw is in an interval
+	 * [X1, X2) where X2 - X1 = task.tickets.
+	 */
+
+	/**
+	 * Retrieve the 'pool of tickets' from the queue of tasks. We drop idle() by default.
+	 */
+
+	const std::size_t pool = sched.tickets - 1;
+
+	/**
+	 * Compute a random number for the lottery 'draw'.
+	 */
+
+	const std::size_t draw = rand<16>();
+
+	/**
+	 *  Map that into the range of tickets via modulo(). This is an approximation to the modulo function.
+	 */
+
+	const std::size_t map = multiply(draw, pool) >> (sizeof(std::size_t) << 3);
+
+	/**
+	 * Maintain the interval boundaries.
+	 */
 
 	std::size_t lowerTicketBound = 0;
 	std::size_t higherTicketBound = 0;
-	for (std::size_t i = 0; i < size; ++i) {
-		lowerTicketBound += sched.queue[i]->priority;
 
-		higherTicketBound += sched.queue[i]->priority;
+	/**
+	 * Loop through the 'pool' of tickets by using the interval variables to create a 'slice'
+	 * corresponding to a task. If the random draw is within range, then this is the task that
+	 * will be picked.
+	 */
+
+	for (std::size_t i = 0; i < sz; ++i) {
+
+		/**
+		 * If we see idle(), we skip it without counting its tickets at all.
+		 */
+
+		const std::uint16_t retAddress = (*task)->KernelStackPointer[15];
+		if (retAddress == (std::uint16_t) Task::idle) {
+			task++;
+		}
+
+		if ((*task)->sleeping) {
+			task++;
+			continue;
+		}
+
+		/**
+		 * Otherwise, we iterate normally and perform the bounds checks as usual. When we are in
+		 * the right interval, we return the task that spans that cut.
+		 */
+
+		higherTicketBound += (*task)->priority;
+		if (lowerTicketBound <= map && map < higherTicketBound) break;
+		lowerTicketBound += (*task)->priority;
+		task++;
 	}
 
-	return sched.queue.front();
+	return *task;
 }
 
 /**
@@ -47,42 +115,43 @@ Task *Scheduler::roundRobin(Scheduler *arg) {
 	/**
 	 * Maintain an iterator that continually loops through.
 	 */
-	static ListIterator<Task *> toRun = sched.queue.begin();
 
-	/**
-	 * Grab the task that the iterator points to.
-	 */
-
-	Task *runnable = *toRun;
+	static ListIterator<Task *> task = sched.queue.begin();
 
 	/**
 	 * Grab the return address held in the kernel stack. If it is the idle hook,
-	 * increment the iterator to skip it.
+	 * increment the iterator to skip it unless all other tasks are sleeping.
 	 */
 
-	const volatile std::uint16_t node = (std::uint16_t) runnable;
-	const volatile std::uint16_t retAddress = runnable->KernelStackPointer[15];
+	const std::uint16_t retAddress = (*task)->KernelStackPointer[15];
+	const std::size_t numSleeping = sched.numSleeping;
 	if (retAddress == (std::uint16_t) Task::idle) {
-		toRun++;
+		if (numSleeping != sched.queue.size() - 1) {
+			task++;
+		} else return *task;
 	}
 
 	/**
-	 * Grab this new task. Scan ahead and find the first task that is not asleep.
+	 * Scan ahead and find the first task that is not asleep.
 	 */
 
-	runnable = *toRun;
-	while (runnable->sleeping) {
-		toRun++;
-		runnable = *toRun;
+	while ((*task)->sleeping) {
+		task++;
 	}
+
+	/**
+	 * Return the task that isn't asleep.
+	 */
+
+	ListIterator<Task *> runnable = task;
 
 	/**
 	 * Move the iterator forward for next time.
 	 */
 
-	toRun++;
+	task++;
 
-	return runnable;
+	return *runnable;
 }
 
 /**
@@ -98,6 +167,17 @@ Scheduler::Scheduler(TaskQueue& tasks, SchedulingMethod method) : queue(tasks) {
 
 	queue = tasks;
 	queue.addTask(Task::idle);
+
+	/**
+	 * If the lottery scheduler is enabled, then total up the tickets.
+	 */
+
+	ListIterator<Task *> task = queue.begin();
+	for (std::size_t i = 0; i < queue.size(); ++i) {
+		tickets += (*task)->priority;
+		task++;
+	}
+
 
 	/**
 	 * Set the scheduling method.

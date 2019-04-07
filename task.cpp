@@ -14,10 +14,23 @@
 Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(priority) {
 
 	/**
-	 * Kernel stack must be big enough to hold R0, R2, R4 - R15
+	 * Enforce the 2-byte boundary rule by rounding the number of bytes to the
+	 * nearest number of words greater or equal in size.
 	 */
 
-	std::uint16_t *KernelStack = new std::uint16_t[16];
+	const std::uint16_t NumWordsAllocated = stackSize > 0 ? 1 + (stackSize >> 1) : 0;
+
+	/**
+	 * Kernel stack must be big enough to hold R0, R2, R4 - R15. The rest goes to the user stack.
+	 */
+
+	Stack = new std::uint16_t[16 + NumWordsAllocated];
+
+	/**
+	 * Must advance the kernel stack pointer from the base of the stack to the top of the kernel stack.
+	 */
+
+	KernelStackPointer = Stack + NumWordsAllocated;
 
 	/**
 	 * We are simulating a stack on the heap, so the following layout is needed:
@@ -33,39 +46,18 @@ Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(prior
 	 * Set the guard bytes, PC / SR values.
 	 */
 
-	KernelStack[15] = (std::uint16_t) f;
-	KernelStack[14] = (std::uint16_t) Task::idle;
-	KernelStack[13] = (std::uint16_t) f;
-	KernelStack[12] = GIE;
+	KernelStackPointer[15] = (std::uint16_t) f;
+	KernelStackPointer[14] = (std::uint16_t) Task::idle;
+	KernelStackPointer[13] = (std::uint16_t) f;
+	KernelStackPointer[12] = GIE;
 
 	/**
 	 * Set default register state.
 	 */
 
 	for (std::int16_t i = 11; i >= 0; i--) {
-		KernelStack[i] = 0x0000;
+		KernelStackPointer[i] = 0x0000;
 	}
-
-	/**
-	 * The base address of the array is the top of the stack since
-	 * the heap and stack grow the opposite way.
-	 */
-
-	KernelStackPointer = KernelStack;
-
-	/**
-	 * Enforce the 2-byte boundary rule by rounding the number of bytes to the
-	 * nearest number of words greater or equal in size.
-	 */
-
-	const std::uint16_t NumWordsAllocated = stackSize > 0 ? 1 + (stackSize >> 1) : 0;
-
-	/**
-	 * Allocate a user stack, but move the stack pointer up since no allocations were made.
-	 */
-
-	std::uint16_t *UserStack = new std::uint16_t[NumWordsAllocated];
-	UserStackPointer = UserStack + NumWordsAllocated;
 }
 
 /**
@@ -73,8 +65,7 @@ Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(prior
  */
 
 Task::~Task() {
-	delete UserStackPointer;
-	delete KernelStackPointer;
+	delete Stack;
 }
 
 /**
