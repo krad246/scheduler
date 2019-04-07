@@ -1,49 +1,50 @@
 #include <depends.h>
 
-static volatile std::uint32_t p = 0;
-static volatile std::uint32_t pold = 0;
-static volatile std::uint32_t q = 0;
+static volatile int x = 0;
+static volatile int y = 0;
 static volatile std::uint32_t z = 0;
+static volatile std::uint32_t zold = 0;
 
-void *bar(void *arg) {
+void foo(void) {
 	while (1) {
-		q++;
-		if (q >= 1024) {
-			q -= 1024;
+		x++;
+		if (x >= 16384) {
+			x -= 16384;
+		}
+	}
+}
+
+void bar(void) {
+	while (1) {
+		y++;
+		if (y >= 16384) {
+			y -= 16384;
 			P1OUT ^= BIT6;
 		}
 	}
-	return 0;
 }
 
-void *baz(void *arg) {
-	while (1) {
+void baz(void) {
+	while (z <= 70000) {
 		z++;
-	}
-}
 
-
-TaskQueue x;
-void *foo(void *arg) {
-	while (p <= 32768) {
-		p++;
-		if (p - pold >= 2048) {
-			pold = p;
+		if (z - zold >= 5000) {
+			zold = z;
 			P1OUT ^= BIT0;
 		}
 	}
-//	x.addTask(baz);
-	return 0;
+	P1OUT &= ~BIT0;
 }
 
 int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
-	x.addTask(foo, 7);
+	TaskQueue x;
+	x.addTask(foo);
 	x.addTask(bar);
-	P1DIR |= (BIT0 | BIT6);
-	Scheduler sched(x);
-	sched.start(1000000);
-
+	x.addTask(baz);
+	Scheduler s(x);
+	P1DIR = BIT0 | BIT6;
+	s.start((std::size_t) 16000000);
 	_low_power_mode_0();
 	return 0;
 }

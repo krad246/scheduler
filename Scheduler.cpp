@@ -32,52 +32,124 @@ Task *Scheduler::lottery(Scheduler *arg) {
 	return sched.queue.front();
 }
 
+/**
+ * Round robin scheduling method; loops through task list linearly.
+ */
+
 Task *Scheduler::roundRobin(Scheduler *arg) {
+
+	/**
+	 * Grab the scheduler instance.
+	 */
+
 	const Scheduler& sched = *arg;
 
-	const std::size_t count = sched.queue.size();
+	/**
+	 * Maintain an iterator that continually loops through.
+	 */
 	static ListIterator<Task *> toRun = sched.queue.begin();
 
+	/**
+	 * Grab the task that the iterator points to.
+	 */
+
 	Task *runnable = *toRun;
-	toRun++;
-	if ((*toRun)->KernelStackPointer[15] == (std::uint16_t) Task::idle) {
+
+	/**
+	 * Grab the return address held in the kernel stack. If it is the idle hook,
+	 * increment the iterator to skip it.
+	 */
+
+	const volatile std::uint16_t node = (std::uint16_t) runnable;
+	const volatile std::uint16_t retAddress = runnable->KernelStackPointer[15];
+	if (retAddress == (std::uint16_t) Task::idle) {
 		toRun++;
 	}
 
-	if (toRun.pos() >= count) {
-		toRun = sched.queue.begin();
-	}
+	/**
+	 * Grab this new task and return it.
+	 */
 
 	runnable = *toRun;
+
+	/**
+	 * Move the iterator forward for next time.
+	 */
+
+	toRun++;
 
 	return runnable;
 }
 
+/**
+ * Scheduler constructor; accepts a queue of tasks and a scheduling method to run.
+ */
+
 Scheduler::Scheduler(TaskQueue& tasks, SchedulingMethod method) : queue(tasks) {
+
+	/**
+	 * Grab the list of tasks and inject the idle hook into it. The system must always be running
+	 * something.
+	 */
+
 	queue = tasks;
 	queue.addTask(Task::idle);
 
+	/**
+	 * Set the scheduling method.
+	 */
+
 	callback = method;
 
-	Scheduler::sched = this;
+	/**
+	 * Singleton pattern. If this is the first instance of the scheduler being built, set the singleton
+	 * to this instance. Otherwise, hang / crash.
+	 */
+
+	if (sched == nullptr) sched = this;
+	else _low_power_mode_4();
 }
 
-Scheduler::~Scheduler() {
-
-}
+/**
+ * Start the scheduler by configuring the clock modules and keeping track of the system stack
+ * state so it can be used later.
+ */
 
 void Scheduler::start(std::size_t frequency) {
 	SchedStackPointer = (std::uint16_t *) _get_SP_register();
 	SystemClock::StartSystemClock(frequency);
 }
 
+/**
+ * Scheduler tick that performs the context switch. Interrupt switches system to kernel mode,
+ * updates system time, cleans up any finished tasks, figures out what to run next, then exits
+ * kernel mode by loading the state of the runnable.
+ */
+
 #pragma vector = WDT_VECTOR
 interrupt void Scheduler::preempt(void) {
-	Scheduler::enterKernelCode();
+	/**
+	 * Switch modes.
+	 */
+
+	enterKernelMode();
+
+	/**
+	 * Do some cleanup.
+	 */
+
 	SystemClock::UpdateSystemTime();
+	freeCompletedTasks();
 
-	Scheduler::freeCompletedTasks();
+	/**
+	 * Prep for the next function.
+	 */
 
-	Task *runnable = Scheduler::sched->callback(Scheduler::sched);
-	Scheduler::exitKernelCode(runnable);
+	const Task *runnable = sched->callback(sched);
+
+	/**
+	 * Jump to the next function.
+	 */
+
+	exitKernelMode(runnable);
 }

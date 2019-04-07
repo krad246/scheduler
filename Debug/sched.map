@@ -1,10 +1,10 @@
 ******************************************************************************
                   MSP430 Linker PC v18.1.5                     
 ******************************************************************************
->> Linked Sat Apr  6 18:29:36 2019
+>> Linked Sun Apr  7 00:40:59 2019
 
 OUTPUT FILE NAME:   <sched.out>
-ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 0000ca52
+ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 0000c9a4
 
 
 MEMORY CONFIGURATION
@@ -14,12 +14,12 @@ MEMORY CONFIGURATION
   SFR                   00000000   00000010  00000000  00000010  RWIX
   PERIPHERALS_8BIT      00000010   000000f0  00000000  000000f0  RWIX
   PERIPHERALS_16BIT     00000100   00000100  00000000  00000100  RWIX
-  RAM                   00000200   00000200  000001ec  00000014  RWIX
+  RAM                   00000200   00000200  000001d6  0000002a  RWIX
   INFOD                 00001000   00000040  00000000  00000040  RWIX
   INFOC                 00001040   00000040  00000000  00000040  RWIX
   INFOB                 00001080   00000040  00000000  00000040  RWIX
   INFOA                 000010c0   00000040  00000000  00000040  RWIX
-  FLASH                 0000c000   00003fde  00000b28  000034b6  RWIX
+  FLASH                 0000c000   00003fde  00000a84  0000355a  RWIX
   BSLSIGNATURE          0000ffde   00000002  00000002  00000000  RWIX  ffff 
   INT00                 0000ffe0   00000002  00000002  00000000  RWIX
   INT01                 0000ffe2   00000002  00000000  00000002  RWIX
@@ -44,23 +44,17 @@ SECTION ALLOCATION MAP
  output                                  attributes/
 section   page    origin      length       input sections
 --------  ----  ----------  ----------   ----------------
-.data      0    00000360    00000026     UNINITIALIZED
-                  00000360    00000010     main.obj (.data)
-                  00000370    00000008     SystemClock.obj (.data)
-                  00000378    00000004     Scheduler.obj (.data)
-                  0000037c    00000002     rts430_eabi.lib : exit_gvars.c.obj (.data:__TI_cleanup_ptr)
-                  0000037e    00000002                     : exit_gvars.c.obj (.data:__TI_dtors_ptr)
-                  00000380    00000002                     : dtor_list.c.obj (.data)
-                  00000382    00000002                     : exit.c.obj (.data)
-                  00000384    00000002                     : memory.c.obj (.data)
+.data      0    00000360    0000001a     UNINITIALIZED
+                  00000360    0000000c     main.obj (.data)
+                  0000036c    00000008     SystemClock.obj (.data)
+                  00000374    00000004     Scheduler.obj (.data)
+                  00000378    00000002     rts430_eabi.lib : memory.c.obj (.data)
 
-.bss       0    00000386    00000016     UNINITIALIZED
-                  00000386    00000006     rts430_eabi.lib : memory.c.obj (.bss)
-                  0000038c    00000006     main.obj (.bss:x)
-                  00000392    00000004     Scheduler.obj (.bss:toRun$2)
-                  00000396    00000002     Scheduler.obj (.bss)
-                  00000398    00000002     rts430_eabi.lib : new.cpp.obj (.bss)
-                  0000039a    00000002     (.common:__dso_handle)
+.bss       0    0000037a    0000000c     UNINITIALIZED
+                  0000037a    00000006     rts430_eabi.lib : memory.c.obj (.bss)
+                  00000380    00000002     Scheduler.obj (.bss)
+                  00000382    00000002     rts430_eabi.lib : new.cpp.obj (.bss)
+                  00000384    00000002     Scheduler.obj (.bss:toRun$2)
 
 .sysmem    0    00000200    00000160     UNINITIALIZED
                   00000200    00000004     rts430_eabi.lib : memory.c.obj (.sysmem)
@@ -70,62 +64,50 @@ section   page    origin      length       input sections
                   000003b0    00000002     rts430_eabi.lib : boot.c.obj (.stack)
                   000003b2    0000004e     --HOLE--
 
-.text      0    0000c000    00000b04     
-                  0000c000    0000021a     main.obj (.text:main)
-                  0000c21a    0000017c     Scheduler.obj (.text:_ZN9Scheduler7preemptEv)
-                  0000c396    0000016a     Task.obj (.text:_ZN9TaskQueue7addTaskEPFPvS0_Ejj)
-                  0000c500    000000d0     rts430_eabi.lib : memory.c.obj (.text:malloc)
-                  0000c5d0    0000007c     Scheduler.obj (.text:_ZN9Scheduler10roundRobinEPS_)
-                  0000c64c    0000007c     rts430_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
-                  0000c6c8    00000070                     : memory.c.obj (.text:free)
-                  0000c738    00000068     SystemClock.obj (.text:_ZN11SystemClock16StartSystemClockEj)
-                  0000c7a0    0000005e     main.obj (.text:_ZN9TaskQueueD1Ev)
-                  0000c7fe    0000005c     rts430_eabi.lib : autoinit.c.obj (.text:__TI_auto_init_nobinit:__TI_auto_init_nobinit)
-                  0000c85a    0000004c                     : lsr16.asm.obj (.text)
-                  0000c8a6    00000044     main.obj (.text:_Z3fooPv)
-                  0000c8ea    00000044     rts430_eabi.lib : dtor_list.c.obj (.text:_ZN33_INTERNAL_11_dtor_list_c_14e673d611__TI_atexitEPFYvPvES0_S0_$4)
-                  0000c92e    00000044                     : exit.c.obj (.text:exit)
-                  0000c972    0000002c                     : lsl16.asm.obj (.text)
-                  0000c99e    0000002a     Scheduler.obj (.text:_ZN9SchedulerC1ER9TaskQueuePFP4TaskPS_E)
-                  0000c9c8    00000026     main.obj (.text:_Z3barPv)
-                  0000c9ee    00000024     rts430_eabi.lib : new.cpp.obj (.text:_Znwj)
-                  0000ca12    00000024                     : dtor_list.c.obj (.text:__cxa_ia64_exit)
-                  0000ca36    0000001c     main.obj (.text:__sti___8_main_cpp__Z3barPv)
-                  0000ca52    0000001c     rts430_eabi.lib : boot.c.obj (.text:_c_int00_noargs)
-                  0000ca6e    00000014                     : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init_nomemset:__TI_zero_init_nomemset)
-                  0000ca82    00000012                     : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
-                  0000ca94    00000010                     : memcpy.c.obj (.text:memcpy)
-                  0000caa4    00000010                     : epilog.asm.obj (.text)
-                  0000cab4    0000000e                     : guard.c.obj (.text:__cxa_guard_acquire)
-                  0000cac2    0000000a     Scheduler.obj (.text:_ZN9Scheduler5startEj)
-                  0000cacc    0000000a     rts430_eabi.lib : new.cpp.obj (.text:_ZdlPv)
-                  0000cad6    00000008     Task.obj (.text:_ZN4Task4idleEPv)
-                  0000cade    00000008     rts430_eabi.lib : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
-                  0000cae6    00000006                     : guard.c.obj (.text:__cxa_guard_release)
-                  0000caec    00000006                     : exit.c.obj (.text:abort)
-                  0000caf2    00000004                     : new.cpp.obj (.text:_ZdlPvj)
-                  0000caf6    00000004                     : new.cpp.obj (.text:_Znaj)
-                  0000cafa    00000004                     : pre_init.c.obj (.text:_system_pre_init)
-                  0000cafe    00000002     Scheduler.obj (.text:_ZN9SchedulerD1Ev)
-                  0000cb00    00000002     rts430_eabi.lib : _lock.c.obj (.text:_nop)
-                  0000cb02    00000002                     : startup.c.obj (.text:_system_post_cinit)
+.text      0    0000c000    00000a68     
+                  0000c000    0000038e     main.obj (.text:main)
+                  0000c38e    00000126     Task.obj (.text:_ZN9TaskQueue7addTaskEPFvvEjj)
+                  0000c4b4    00000100     Scheduler.obj (.text:_ZN9Scheduler7preemptEv)
+                  0000c5b4    000000d0     rts430_eabi.lib : memory.c.obj (.text:malloc)
+                  0000c684    0000007c                     : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
+                  0000c700    00000070                     : memory.c.obj (.text:free)
+                  0000c770    00000068     SystemClock.obj (.text:_ZN11SystemClock16StartSystemClockEj)
+                  0000c7d8    00000052     Scheduler.obj (.text:_ZN9Scheduler10roundRobinEPS_)
+                  0000c82a    0000004c     rts430_eabi.lib : lsr16.asm.obj (.text)
+                  0000c876    00000048     main.obj (.text:_Z3bazv)
+                  0000c8be    00000042     rts430_eabi.lib : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit:__TI_auto_init_nobinit_nopinit)
+                  0000c900    00000038     Scheduler.obj (.text:_ZN9SchedulerC1ER9TaskQueuePFP4TaskPS_E)
+                  0000c938    0000002c     rts430_eabi.lib : lsl16.asm.obj (.text)
+                  0000c964    00000024                     : new.cpp.obj (.text:_Znwj)
+                  0000c988    0000001c     main.obj (.text:_Z3barv)
+                  0000c9a4    0000001c     rts430_eabi.lib : boot.c.obj (.text:_c_int00_noargs)
+                  0000c9c0    00000016     main.obj (.text:_Z3foov)
+                  0000c9d6    00000014     rts430_eabi.lib : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init_nomemset:__TI_zero_init_nomemset)
+                  0000c9ea    00000012                     : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
+                  0000c9fc    00000010                     : memcpy.c.obj (.text:memcpy)
+                  0000ca0c    00000010                     : epilog.asm.obj (.text)
+                  0000ca1c    0000000e                     : guard.c.obj (.text:__cxa_guard_acquire)
+                  0000ca2a    0000000a     Scheduler.obj (.text:_ZN9Scheduler5startEj)
+                  0000ca34    0000000a     rts430_eabi.lib : new.cpp.obj (.text:_ZdlPv)
+                  0000ca3e    00000008     Task.obj (.text:_ZN4Task4idleEv)
+                  0000ca46    00000008     rts430_eabi.lib : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
+                  0000ca4e    00000006                     : guard.c.obj (.text:__cxa_guard_release)
+                  0000ca54    00000006                     : exit.c.obj (.text:abort)
+                  0000ca5a    00000004                     : new.cpp.obj (.text:_ZdlPvj)
+                  0000ca5e    00000004                     : new.cpp.obj (.text:_Znaj)
+                  0000ca62    00000004                     : pre_init.c.obj (.text:_system_pre_init)
+                  0000ca66    00000002                     : startup.c.obj (.text:_system_post_cinit)
 
-.const     0    0000cb04    00000004     
-                  0000cb04    00000002     rts430_eabi.lib : _lock.c.obj (.const:_lock)
-                  0000cb06    00000002                     : _lock.c.obj (.const:_unlock)
-
-.cinit     0    0000cb0a    0000001e     
-                  0000cb0a    0000000b     (.cinit..data.load) [load image, compression = lzss]
-                  0000cb15    00000001     --HOLE-- [fill = 0]
-                  0000cb16    00000006     (__TI_handler_table)
-                  0000cb1c    00000004     (.cinit..bss.load) [load image, compression = zero_init]
-                  0000cb20    00000008     (__TI_cinit_table)
+.cinit     0    0000ca68    0000001c     
+                  0000ca68    0000000a     (.cinit..data.load) [load image, compression = lzss]
+                  0000ca72    00000006     (__TI_handler_table)
+                  0000ca78    00000004     (.cinit..bss.load) [load image, compression = zero_init]
+                  0000ca7c    00000008     (__TI_cinit_table)
 
 .binit     0    0000c000    00000000     
 
 .init_array 
-*          0    0000cb08    00000002     
-                  0000cb08    00000002     <whole-program> (.init_array)
+*          0    0000c000    00000000     UNINITIALIZED
 
 TRAPINT    0    0000ffe0    00000002     
                   0000ffe0    00000002     rts430_eabi.lib : int00.asm.obj (.int00)
@@ -181,73 +163,65 @@ $fill000   0    0000ffde    00000002
 
 MODULE SUMMARY
 
-       Module                                   code   ro data   rw data
-       ------                                   ----   -------   -------
+       Module                       code   ro data   rw data
+       ------                       ----   -------   -------
     .\
-       main.obj                                 766    0         22     
-       Scheduler.obj                            558    2         10     
-       Task.obj                                 370    0         0      
-       SystemClock.obj                          104    0         8      
-    +--+----------------------------------------+------+---------+---------+
-       Total:                                   1798   2         40     
-                                                                        
-    C:\Users\krad2\AppData\Local\Temp\
-       {370FD0AE-5C99-4517-A32E-6E746AA4E5DB}   0      2         2      
-    +--+----------------------------------------+------+---------+---------+
-       Total:                                   0      2         2      
-                                                                        
+       main.obj                     1032   0         12     
+       Scheduler.obj                404    2         8      
+       Task.obj                     302    0         0      
+       SystemClock.obj              104    0         8      
+    +--+----------------------------+------+---------+---------+
+       Total:                       1842   2         28     
+                                                            
     C:\ti\ccsv8\tools\compiler\ti-cgt-msp430_18.1.5.LTS\lib\rts430_eabi.lib
-       memory.c.obj                             320    0         8      
-       copy_decompress_lzss.c.obj               124    0         0      
-       dtor_list.c.obj                          104    0         2      
-       autoinit.c.obj                           92     0         0      
-       exit.c.obj                               74     0         2      
-       lsr16.asm.obj                            76     0         0      
-       new.cpp.obj                              54     0         2      
-       lsl16.asm.obj                            44     0         0      
-       boot.c.obj                               28     2         0      
-       copy_zero_init.c.obj                     20     0         0      
-       guard.c.obj                              20     0         0      
-       copy_decompress_none.c.obj               18     0         0      
-       epilog.asm.obj                           16     0         0      
-       memcpy.c.obj                             16     0         0      
-       isr_trap.asm.obj                         8      0         0      
-       _lock.c.obj                              2      4         0      
-       exit_gvars.c.obj                         0      0         4      
-       pre_init.c.obj                           4      0         0      
-       int00.asm.obj                            0      2         0      
-       int02.asm.obj                            0      2         0      
-       int03.asm.obj                            0      2         0      
-       int05.asm.obj                            0      2         0      
-       int06.asm.obj                            0      2         0      
-       int07.asm.obj                            0      2         0      
-       int08.asm.obj                            0      2         0      
-       int09.asm.obj                            0      2         0      
-       int11.asm.obj                            0      2         0      
-       int12.asm.obj                            0      2         0      
-       int13.asm.obj                            0      2         0      
-       int14.asm.obj                            0      2         0      
-       startup.c.obj                            2      0         0      
-    +--+----------------------------------------+------+---------+---------+
-       Total:                                   1022   30        18     
-                                                                        
-       Heap:                                    0      0         352    
-       Stack:                                   0      0         80     
-       Linker Generated:                        0      29        0      
-    +--+----------------------------------------+------+---------+---------+
-       Grand Total:                             2820   63        492    
+       memory.c.obj                 320    0         8      
+       copy_decompress_lzss.c.obj   124    0         0      
+       lsr16.asm.obj                76     0         0      
+       autoinit.c.obj               66     0         0      
+       new.cpp.obj                  54     0         2      
+       lsl16.asm.obj                44     0         0      
+       boot.c.obj                   28     2         0      
+       copy_zero_init.c.obj         20     0         0      
+       guard.c.obj                  20     0         0      
+       copy_decompress_none.c.obj   18     0         0      
+       epilog.asm.obj               16     0         0      
+       memcpy.c.obj                 16     0         0      
+       isr_trap.asm.obj             8      0         0      
+       exit.c.obj                   6      0         0      
+       pre_init.c.obj               4      0         0      
+       int00.asm.obj                0      2         0      
+       int02.asm.obj                0      2         0      
+       int03.asm.obj                0      2         0      
+       int05.asm.obj                0      2         0      
+       int06.asm.obj                0      2         0      
+       int07.asm.obj                0      2         0      
+       int08.asm.obj                0      2         0      
+       int09.asm.obj                0      2         0      
+       int11.asm.obj                0      2         0      
+       int12.asm.obj                0      2         0      
+       int13.asm.obj                0      2         0      
+       int14.asm.obj                0      2         0      
+       startup.c.obj                2      0         0      
+    +--+----------------------------+------+---------+---------+
+       Total:                       822    26        10     
+                                                            
+       Heap:                        0      0         352    
+       Stack:                       0      0         80     
+       Linker Generated:            0      28        0      
+    +--+----------------------------+------+---------+---------+
+       Grand Total:                 2664   56        470    
 
 
 LINKER GENERATED COPY TABLES
 
-__TI_cinit_table @ 0000cb20 records: 2, size/record: 4, table size: 8
-	.data: load addr=0000cb0a, load size=0000000b bytes, run addr=00000360, run size=00000026 bytes, compression=lzss
-	.bss: load addr=0000cb1c, load size=00000004 bytes, run addr=00000386, run size=00000016 bytes, compression=zero_init
+__TI_cinit_table @ 0000ca7c records: 2, size/record: 4, table size: 8
+	.data: load addr=0000ca68, load size=0000000a bytes, run addr=00000360, run size=0000001a bytes, compression=lzss
+	.bss: load addr=0000ca78, load size=00000004 bytes, run addr=0000037a, run size=0000000c bytes, compression=zero_init
 
 
 LINKER GENERATED HANDLER TABLE
 
-__TI_handler_table @ 0000cb16 records: 3, size/record: 2, table size: 6
+__TI_handler_table @ 0000ca72 records: 3, size/record: 2, table size: 6
 	index: 0, handler: __TI_zero_init
 	index: 1, handler: __TI_decompress_lzss
 	index: 2, handler: __TI_decompress_none
@@ -267,7 +241,7 @@ address   name
 00000057  BCSCTL1                                
 00000058  BCSCTL2                                
 00000053  BCSCTL3                                
-0000caec  C$$EXIT                                
+0000ca54  C$$EXIT                                
 00000059  CACTL1                                 
 0000005a  CACTL2                                 
 000010fb  CALBC1_12MHZ                           
@@ -356,46 +330,39 @@ address   name
 0000006d  UCB0STAT                               
 0000006f  UCB0TXBUF                              
 00000120  WDTCTL                                 
-0000c9c8  _Z3barPv                               
-0000c8a6  _Z3fooPv                               
-00000370  _ZN11SystemClock13microsPerTickE       
-0000c738  _ZN11SystemClock16StartSystemClockEj   
-00000374  _ZN11SystemClock16fractionalMillisE    
-00000372  _ZN11SystemClock6microsE               
-00000376  _ZN11SystemClock6millisE               
-0000cad6  _ZN4Task4idleEPv                       
-0000c5d0  _ZN9Scheduler10roundRobinEPS_          
-0000037a  _ZN9Scheduler17SchedStackPointerE      
-00000378  _ZN9Scheduler5schedE                   
-0000cac2  _ZN9Scheduler5startEj                  
-0000c21a  _ZN9Scheduler7preemptEv                
-0000c99e  _ZN9SchedulerC1ER9TaskQueuePFP4TaskPS_E
-0000c99e  _ZN9SchedulerC2ER9TaskQueuePFP4TaskPS_E
-0000cafe  _ZN9SchedulerD1Ev                      
-0000cafe  _ZN9SchedulerD2Ev                      
-0000c396  _ZN9TaskQueue7addTaskEPFPvS0_Ejj       
-0000c7a0  _ZN9TaskQueueD1Ev                      
-0000caec  _ZSt17__throw_bad_allocv               
-0000cacc  _ZdlPv                                 
-0000caf2  _ZdlPvj                                
-0000caf6  _Znaj                                  
-0000c9ee  _Znwj                                  
+0000c988  _Z3barv                                
+0000c876  _Z3bazv                                
+0000c9c0  _Z3foov                                
+0000036c  _ZN11SystemClock13microsPerTickE       
+0000c770  _ZN11SystemClock16StartSystemClockEj   
+00000370  _ZN11SystemClock16fractionalMillisE    
+0000036e  _ZN11SystemClock6microsE               
+00000372  _ZN11SystemClock6millisE               
+0000ca3e  _ZN4Task4idleEv                        
+0000c7d8  _ZN9Scheduler10roundRobinEPS_          
+00000376  _ZN9Scheduler17SchedStackPointerE      
+00000374  _ZN9Scheduler5schedE                   
+0000ca2a  _ZN9Scheduler5startEj                  
+0000c4b4  _ZN9Scheduler7preemptEv                
+0000c900  _ZN9SchedulerC1ER9TaskQueuePFP4TaskPS_E
+0000c900  _ZN9SchedulerC2ER9TaskQueuePFP4TaskPS_E
+0000c38e  _ZN9TaskQueue7addTaskEPFvvEjj          
+0000ca54  _ZSt17__throw_bad_allocv               
+0000ca34  _ZdlPv                                 
+0000ca5a  _ZdlPvj                                
+0000ca5e  _Znaj                                  
+0000c964  _Znwj                                  
 00000400  __STACK_END                            
 00000050  __STACK_SIZE                           
 00000160  __SYSMEM_SIZE                          
-0000cb20  __TI_CINIT_Base                        
-0000cb28  __TI_CINIT_Limit                       
-0000cb16  __TI_Handler_Table_Base                
-0000cb1c  __TI_Handler_Table_Limit               
-0000cb08  __TI_INITARRAY_Base                    
-0000cb0a  __TI_INITARRAY_Limit                   
-0000cade  __TI_ISR_TRAP                          
-0000c7fe  __TI_auto_init_nobinit                 
-0000037c  __TI_cleanup_ptr                       
-0000c64c  __TI_decompress_lzss                   
-0000ca82  __TI_decompress_none                   
-0000037e  __TI_dtors_ptr                         
-00000382  __TI_enable_exit_profile_output        
+0000ca7c  __TI_CINIT_Base                        
+0000ca84  __TI_CINIT_Limit                       
+0000ca72  __TI_Handler_Table_Base                
+0000ca78  __TI_Handler_Table_Limit               
+0000ca46  __TI_ISR_TRAP                          
+0000c8be  __TI_auto_init_nobinit_nopinit         
+0000c684  __TI_decompress_lzss                   
+0000c9ea  __TI_decompress_none                   
 0000ffe0  __TI_int00                             
 0000ffe4  __TI_int02                             
 0000ffe6  __TI_int03                             
@@ -412,69 +379,60 @@ address   name
 ffffffff  __TI_pprof_out_hndl                    
 ffffffff  __TI_prof_data_size                    
 ffffffff  __TI_prof_data_start                   
-0000ca6e  __TI_zero_init_nomemset                
+0000c9d6  __TI_zero_init_nomemset                
 ffffffff  __c_args__                             
-0000c8ea  __cxa_atexit                           
-0000cab4  __cxa_guard_acquire                    
-0000cae6  __cxa_guard_release                    
-0000ca12  __cxa_ia64_exit                        
-0000039a  __dso_handle                           
-0000cab0  __mspabi_func_epilog_1                 
-0000caae  __mspabi_func_epilog_2                 
-0000caac  __mspabi_func_epilog_3                 
-0000caaa  __mspabi_func_epilog_4                 
-0000caa8  __mspabi_func_epilog_5                 
-0000caa6  __mspabi_func_epilog_6                 
-0000caa4  __mspabi_func_epilog_7                 
-0000c972  __mspabi_slli                          
-0000c99a  __mspabi_slli_1                        
-0000c988  __mspabi_slli_10                       
-0000c986  __mspabi_slli_11                       
-0000c984  __mspabi_slli_12                       
-0000c982  __mspabi_slli_13                       
-0000c980  __mspabi_slli_14                       
-0000c97e  __mspabi_slli_15                       
-0000c998  __mspabi_slli_2                        
-0000c996  __mspabi_slli_3                        
-0000c994  __mspabi_slli_4                        
-0000c992  __mspabi_slli_5                        
-0000c990  __mspabi_slli_6                        
-0000c98e  __mspabi_slli_7                        
-0000c98c  __mspabi_slli_8                        
-0000c98a  __mspabi_slli_9                        
-0000c85a  __mspabi_srli                          
-0000c8a0  __mspabi_srli_1                        
-0000c87c  __mspabi_srli_10                       
-0000c878  __mspabi_srli_11                       
-0000c874  __mspabi_srli_12                       
-0000c870  __mspabi_srli_13                       
-0000c86c  __mspabi_srli_14                       
-0000c868  __mspabi_srli_15                       
-0000c89c  __mspabi_srli_2                        
-0000c898  __mspabi_srli_3                        
-0000c894  __mspabi_srli_4                        
-0000c890  __mspabi_srli_5                        
-0000c88c  __mspabi_srli_6                        
-0000c888  __mspabi_srli_7                        
-0000c884  __mspabi_srli_8                        
-0000c880  __mspabi_srli_9                        
-0000ca36  __sti___8_main_cpp__Z3barPv            
-0000ca52  _c_int00_noargs                        
-0000cb04  _lock                                  
-0000cb00  _nop                                   
+0000ca1c  __cxa_guard_acquire                    
+0000ca4e  __cxa_guard_release                    
+0000ca18  __mspabi_func_epilog_1                 
+0000ca16  __mspabi_func_epilog_2                 
+0000ca14  __mspabi_func_epilog_3                 
+0000ca12  __mspabi_func_epilog_4                 
+0000ca10  __mspabi_func_epilog_5                 
+0000ca0e  __mspabi_func_epilog_6                 
+0000ca0c  __mspabi_func_epilog_7                 
+0000c938  __mspabi_slli                          
+0000c960  __mspabi_slli_1                        
+0000c94e  __mspabi_slli_10                       
+0000c94c  __mspabi_slli_11                       
+0000c94a  __mspabi_slli_12                       
+0000c948  __mspabi_slli_13                       
+0000c946  __mspabi_slli_14                       
+0000c944  __mspabi_slli_15                       
+0000c95e  __mspabi_slli_2                        
+0000c95c  __mspabi_slli_3                        
+0000c95a  __mspabi_slli_4                        
+0000c958  __mspabi_slli_5                        
+0000c956  __mspabi_slli_6                        
+0000c954  __mspabi_slli_7                        
+0000c952  __mspabi_slli_8                        
+0000c950  __mspabi_slli_9                        
+0000c82a  __mspabi_srli                          
+0000c870  __mspabi_srli_1                        
+0000c84c  __mspabi_srli_10                       
+0000c848  __mspabi_srli_11                       
+0000c844  __mspabi_srli_12                       
+0000c840  __mspabi_srli_13                       
+0000c83c  __mspabi_srli_14                       
+0000c838  __mspabi_srli_15                       
+0000c86c  __mspabi_srli_2                        
+0000c868  __mspabi_srli_3                        
+0000c864  __mspabi_srli_4                        
+0000c860  __mspabi_srli_5                        
+0000c85c  __mspabi_srli_6                        
+0000c858  __mspabi_srli_7                        
+0000c854  __mspabi_srli_8                        
+0000c850  __mspabi_srli_9                        
+0000c9a4  _c_int00_noargs                        
 0000fffe  _reset_vector                          
 000003b0  _stack                                 
 00000200  _sys_memory                            
-0000cb02  _system_post_cinit                     
-0000cafa  _system_pre_init                       
-0000cb06  _unlock                                
-0000caec  abort                                  
-0000c92e  exit                                   
-0000c6c8  free                                   
+0000ca66  _system_post_cinit                     
+0000ca62  _system_pre_init                       
+0000ca54  abort                                  
+0000c700  free                                   
 0000c000  main                                   
-0000c500  malloc                                 
-0000ca94  memcpy                                 
-0000038c  x                                      
+0000c5b4  malloc                                 
+0000c9fc  memcpy                                 
 
 
 GLOBAL SYMBOLS: SORTED BY Symbol Address 
@@ -569,17 +527,12 @@ address   name
 000001b4  ADC10MEM                               
 000001bc  ADC10SA                                
 00000200  _sys_memory                            
-00000370  _ZN11SystemClock13microsPerTickE       
-00000372  _ZN11SystemClock6microsE               
-00000374  _ZN11SystemClock16fractionalMillisE    
-00000376  _ZN11SystemClock6millisE               
-00000378  _ZN9Scheduler5schedE                   
-0000037a  _ZN9Scheduler17SchedStackPointerE      
-0000037c  __TI_cleanup_ptr                       
-0000037e  __TI_dtors_ptr                         
-00000382  __TI_enable_exit_profile_output        
-0000038c  x                                      
-0000039a  __dso_handle                           
+0000036c  _ZN11SystemClock13microsPerTickE       
+0000036e  _ZN11SystemClock6microsE               
+00000370  _ZN11SystemClock16fractionalMillisE    
+00000372  _ZN11SystemClock6millisE               
+00000374  _ZN9Scheduler5schedE                   
+00000376  _ZN9Scheduler17SchedStackPointerE      
 000003b0  _stack                                 
 00000400  __STACK_END                            
 000010c0  TLV_CHECKSUM                           
@@ -596,91 +549,80 @@ address   name
 000010fe  CALDCO_1MHZ                            
 000010ff  CALBC1_1MHZ                            
 0000c000  main                                   
-0000c21a  _ZN9Scheduler7preemptEv                
-0000c396  _ZN9TaskQueue7addTaskEPFPvS0_Ejj       
-0000c500  malloc                                 
-0000c5d0  _ZN9Scheduler10roundRobinEPS_          
-0000c64c  __TI_decompress_lzss                   
-0000c6c8  free                                   
-0000c738  _ZN11SystemClock16StartSystemClockEj   
-0000c7a0  _ZN9TaskQueueD1Ev                      
-0000c7fe  __TI_auto_init_nobinit                 
-0000c85a  __mspabi_srli                          
-0000c868  __mspabi_srli_15                       
-0000c86c  __mspabi_srli_14                       
-0000c870  __mspabi_srli_13                       
-0000c874  __mspabi_srli_12                       
-0000c878  __mspabi_srli_11                       
-0000c87c  __mspabi_srli_10                       
-0000c880  __mspabi_srli_9                        
-0000c884  __mspabi_srli_8                        
-0000c888  __mspabi_srli_7                        
-0000c88c  __mspabi_srli_6                        
-0000c890  __mspabi_srli_5                        
-0000c894  __mspabi_srli_4                        
-0000c898  __mspabi_srli_3                        
-0000c89c  __mspabi_srli_2                        
-0000c8a0  __mspabi_srli_1                        
-0000c8a6  _Z3fooPv                               
-0000c8ea  __cxa_atexit                           
-0000c92e  exit                                   
-0000c972  __mspabi_slli                          
-0000c97e  __mspabi_slli_15                       
-0000c980  __mspabi_slli_14                       
-0000c982  __mspabi_slli_13                       
-0000c984  __mspabi_slli_12                       
-0000c986  __mspabi_slli_11                       
-0000c988  __mspabi_slli_10                       
-0000c98a  __mspabi_slli_9                        
-0000c98c  __mspabi_slli_8                        
-0000c98e  __mspabi_slli_7                        
-0000c990  __mspabi_slli_6                        
-0000c992  __mspabi_slli_5                        
-0000c994  __mspabi_slli_4                        
-0000c996  __mspabi_slli_3                        
-0000c998  __mspabi_slli_2                        
-0000c99a  __mspabi_slli_1                        
-0000c99e  _ZN9SchedulerC1ER9TaskQueuePFP4TaskPS_E
-0000c99e  _ZN9SchedulerC2ER9TaskQueuePFP4TaskPS_E
-0000c9c8  _Z3barPv                               
-0000c9ee  _Znwj                                  
-0000ca12  __cxa_ia64_exit                        
-0000ca36  __sti___8_main_cpp__Z3barPv            
-0000ca52  _c_int00_noargs                        
-0000ca6e  __TI_zero_init_nomemset                
-0000ca82  __TI_decompress_none                   
-0000ca94  memcpy                                 
-0000caa4  __mspabi_func_epilog_7                 
-0000caa6  __mspabi_func_epilog_6                 
-0000caa8  __mspabi_func_epilog_5                 
-0000caaa  __mspabi_func_epilog_4                 
-0000caac  __mspabi_func_epilog_3                 
-0000caae  __mspabi_func_epilog_2                 
-0000cab0  __mspabi_func_epilog_1                 
-0000cab4  __cxa_guard_acquire                    
-0000cac2  _ZN9Scheduler5startEj                  
-0000cacc  _ZdlPv                                 
-0000cad6  _ZN4Task4idleEPv                       
-0000cade  __TI_ISR_TRAP                          
-0000cae6  __cxa_guard_release                    
-0000caec  C$$EXIT                                
-0000caec  _ZSt17__throw_bad_allocv               
-0000caec  abort                                  
-0000caf2  _ZdlPvj                                
-0000caf6  _Znaj                                  
-0000cafa  _system_pre_init                       
-0000cafe  _ZN9SchedulerD1Ev                      
-0000cafe  _ZN9SchedulerD2Ev                      
-0000cb00  _nop                                   
-0000cb02  _system_post_cinit                     
-0000cb04  _lock                                  
-0000cb06  _unlock                                
-0000cb08  __TI_INITARRAY_Base                    
-0000cb0a  __TI_INITARRAY_Limit                   
-0000cb16  __TI_Handler_Table_Base                
-0000cb1c  __TI_Handler_Table_Limit               
-0000cb20  __TI_CINIT_Base                        
-0000cb28  __TI_CINIT_Limit                       
+0000c38e  _ZN9TaskQueue7addTaskEPFvvEjj          
+0000c4b4  _ZN9Scheduler7preemptEv                
+0000c5b4  malloc                                 
+0000c684  __TI_decompress_lzss                   
+0000c700  free                                   
+0000c770  _ZN11SystemClock16StartSystemClockEj   
+0000c7d8  _ZN9Scheduler10roundRobinEPS_          
+0000c82a  __mspabi_srli                          
+0000c838  __mspabi_srli_15                       
+0000c83c  __mspabi_srli_14                       
+0000c840  __mspabi_srli_13                       
+0000c844  __mspabi_srli_12                       
+0000c848  __mspabi_srli_11                       
+0000c84c  __mspabi_srli_10                       
+0000c850  __mspabi_srli_9                        
+0000c854  __mspabi_srli_8                        
+0000c858  __mspabi_srli_7                        
+0000c85c  __mspabi_srli_6                        
+0000c860  __mspabi_srli_5                        
+0000c864  __mspabi_srli_4                        
+0000c868  __mspabi_srli_3                        
+0000c86c  __mspabi_srli_2                        
+0000c870  __mspabi_srli_1                        
+0000c876  _Z3bazv                                
+0000c8be  __TI_auto_init_nobinit_nopinit         
+0000c900  _ZN9SchedulerC1ER9TaskQueuePFP4TaskPS_E
+0000c900  _ZN9SchedulerC2ER9TaskQueuePFP4TaskPS_E
+0000c938  __mspabi_slli                          
+0000c944  __mspabi_slli_15                       
+0000c946  __mspabi_slli_14                       
+0000c948  __mspabi_slli_13                       
+0000c94a  __mspabi_slli_12                       
+0000c94c  __mspabi_slli_11                       
+0000c94e  __mspabi_slli_10                       
+0000c950  __mspabi_slli_9                        
+0000c952  __mspabi_slli_8                        
+0000c954  __mspabi_slli_7                        
+0000c956  __mspabi_slli_6                        
+0000c958  __mspabi_slli_5                        
+0000c95a  __mspabi_slli_4                        
+0000c95c  __mspabi_slli_3                        
+0000c95e  __mspabi_slli_2                        
+0000c960  __mspabi_slli_1                        
+0000c964  _Znwj                                  
+0000c988  _Z3barv                                
+0000c9a4  _c_int00_noargs                        
+0000c9c0  _Z3foov                                
+0000c9d6  __TI_zero_init_nomemset                
+0000c9ea  __TI_decompress_none                   
+0000c9fc  memcpy                                 
+0000ca0c  __mspabi_func_epilog_7                 
+0000ca0e  __mspabi_func_epilog_6                 
+0000ca10  __mspabi_func_epilog_5                 
+0000ca12  __mspabi_func_epilog_4                 
+0000ca14  __mspabi_func_epilog_3                 
+0000ca16  __mspabi_func_epilog_2                 
+0000ca18  __mspabi_func_epilog_1                 
+0000ca1c  __cxa_guard_acquire                    
+0000ca2a  _ZN9Scheduler5startEj                  
+0000ca34  _ZdlPv                                 
+0000ca3e  _ZN4Task4idleEv                        
+0000ca46  __TI_ISR_TRAP                          
+0000ca4e  __cxa_guard_release                    
+0000ca54  C$$EXIT                                
+0000ca54  _ZSt17__throw_bad_allocv               
+0000ca54  abort                                  
+0000ca5a  _ZdlPvj                                
+0000ca5e  _Znaj                                  
+0000ca62  _system_pre_init                       
+0000ca66  _system_post_cinit                     
+0000ca72  __TI_Handler_Table_Base                
+0000ca78  __TI_Handler_Table_Limit               
+0000ca7c  __TI_CINIT_Base                        
+0000ca84  __TI_CINIT_Limit                       
 0000ffe0  __TI_int00                             
 0000ffe4  __TI_int02                             
 0000ffe6  __TI_int03                             
@@ -700,4 +642,4 @@ ffffffff  __TI_prof_data_size
 ffffffff  __TI_prof_data_start                   
 ffffffff  __c_args__                             
 
-[218 symbols]
+[202 symbols]

@@ -41,8 +41,6 @@ public:
 	ListIterator<T>& operator--();
 	ListIterator<T> operator--(int);
 
-	std::size_t pos(void);
-
 	T& operator*();
 
 private:
@@ -52,7 +50,6 @@ private:
 	ListIterator(ListNode<T> *ref);
 
 	ListNode<T> *node;
-	std::size_t idx;
 };
 
 template <class T>
@@ -123,7 +120,6 @@ ListIterator<T>::ListIterator(ListNode<T> *ref) : node(ref) { }
 template <class T>
 inline ListIterator<T>& ListIterator<T>::operator++() {
 	node = node->next;
-	++idx;
 	return *this;
 }
 
@@ -137,7 +133,6 @@ inline ListIterator<T> ListIterator<T>::operator++(int) {
 template <class T>
 inline ListIterator<T>& ListIterator<T>::operator--() {
 	node = node->prev;
-	--idx;
 	return *this;
 }
 
@@ -182,21 +177,14 @@ inline T& ListIterator<T>::operator*() {
 }
 
 template <class T>
-inline std::size_t ListIterator<T>::pos(void) {
-	return idx;
-}
-
-template <class T>
 inline ListIterator<T> List<T>::begin(void) {
 	ListIterator<T> HeadIterator =  ListIterator<T>(head);
-	HeadIterator.idx = 0;
 	return HeadIterator;
 }
 
 template <class T>
 inline ListIterator<T> List<T>::end(void) {
 	ListIterator<T> TailIterator =  ListIterator<T>(tail);
-	TailIterator.idx = count - 1;
 	return TailIterator;
 }
 
@@ -207,11 +195,17 @@ void List<T>::push_back(T& data) {
 	if (head == nullptr) {
 		head = end;
 		tail = end;
+
+		end->next = end;
+		end->prev = end;
 	} else {
 		tail->next = end;
+
 		end->prev = tail;
+		end->next = head;
 
 		tail = tail->next;
+		head->prev = tail;
 	}
 
 	count++;
@@ -225,8 +219,10 @@ void List<T>::push_front(T& data) {
 		head = end;
 		tail = end;
 	} else {
-		end->next = head;
 		head->prev = end;
+
+		end->prev = tail;
+		end->next = head;
 
 		head = head->prev;
 	}
@@ -294,6 +290,10 @@ T List<T>::pop(std::size_t idx) {
 	right->prev = left;
 
 	ret = *HeadIterator;
+
+	if (HeadIterator.node == head) head = head->next;
+	if (HeadIterator.node == tail) tail = tail->prev;
+
 	delete HeadIterator.node;
 
 	count--;
@@ -308,17 +308,17 @@ T List<T>::pop(ListIterator<T> &NodeToRemove) {
 	ListNode<T> *left = NodeToRemove.node->prev;
 	ListNode<T> *right = NodeToRemove.node->next;
 
-	if (left == nullptr) ret = pop_front();
-	else if (right == nullptr) ret = pop_back();
-	else {
-		left->next = right;
-		right->prev = left;
+	left->next = right;
+	right->prev = left;
 
-		ret = *NodeToRemove;
-		delete NodeToRemove.node;
+	ret = *NodeToRemove;
 
-		count--;
-	}
+	if (NodeToRemove.node == head) head = head->next;
+	if (NodeToRemove.node == tail) tail = tail->prev;
+
+	delete NodeToRemove.node;
+
+	count--;
 
 	return ret;
 }

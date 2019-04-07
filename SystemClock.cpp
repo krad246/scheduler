@@ -7,12 +7,27 @@
 
 #include <SystemClock.h>
 
+/**
+ * Default initializations for the system time.
+ */
+
 std::size_t SystemClock::microsPerTick = 0;
 std::size_t SystemClock::micros = 0;
 std::size_t SystemClock::fractionalMillis = 0;
 std::size_t SystemClock::millis = 0;
 
+/**
+ * Start the system timer up with the clock module running at some specified frequency.
+ */
+
 void SystemClock::StartSystemClock(std::size_t frequency) {
+
+	/**
+	 * Only 1 MHz, 8 MHz, 12 MHz, and 16 MHz are supported.
+	 * If any of those frequencies in Hz are passed in, then configure the clock module accordingly.
+	 * Otherwise, halt / crash.
+	 */
+
 	switch (frequency) {
 	case (std::size_t) 1000000:
 		DCOCTL = CALDCO_1MHZ;
@@ -30,22 +45,60 @@ void SystemClock::StartSystemClock(std::size_t frequency) {
 		DCOCTL = CALDCO_16MHZ;
 		BCSCTL1 = CALBC1_16MHZ;
 		break;
+
+	/**
+	 * In the event that no frequency matches.
+	 */
+
 	default:
 		_low_power_mode_4();
 	}
 
+	/**
+	 * Depending on the clock frequency of the system clock, the watchdog timer frequency changes.
+	 * SystemClock::microsPerTick is the number of microseconds per overflow of the timer.
+	 */
+
 	SystemClock::microsPerTick = frequency == 1000000 ? 512 : 8192;
+
+	/**
+	 * Configure the watchdog timer in interval mode with the value above and start it.
+	 */
 
 	if (frequency == 1000000) WDTCTL = WDT_MDLY_0_5;
 	else WDTCTL = WDT_MDLY_8;
+
+	/**
+	 * Enable interrupts for the scheduler tick.
+	 */
+
 	IE1 |= WDTIE;
 }
 
+/**
+ * Configures and initializes an optional crystal oscillator on the board.
+ */
+
 void SystemClock::StartCrystalOscillator(std::size_t frequency) {
+
+	/**
+	 * Try to clear the fault flags for the oscillator for configuration.
+	 * If the crystal oscillator responds, then the flag will be unset.
+	 * Otherwise the operation will fail. Try 4 times every 0.5 seconds.
+	 */
+
 	std::uint16_t timeout = 4;
 	do {
+		/**
+		 * Clear the flags and try to enable the oscillator.
+		 */
+
 		BCSCTL3 &= ~LFXT1OF;
 		IFG1 &= ~OFIFG;
+
+		/**
+		 * Depending on the clock frequency of the system, wait for a normalized 0.5 sec.
+		 */
 
 		switch (frequency) {
 		case (std::size_t) 1000000:
@@ -65,6 +118,10 @@ void SystemClock::StartCrystalOscillator(std::size_t frequency) {
 		timeout--;
 		if (!timeout) break;
 	} while (IFG1 & OFIFG);
+
+	/**
+	 * If initializing the oscillator is unsuccessful, default-initialize the board.
+	 */
 
 	if (!timeout) {
 		P2SEL &= ~(BIT6 | BIT7);
