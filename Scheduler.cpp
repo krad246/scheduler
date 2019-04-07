@@ -67,10 +67,14 @@ Task *Scheduler::roundRobin(Scheduler *arg) {
 	}
 
 	/**
-	 * Grab this new task and return it.
+	 * Grab this new task. Scan ahead and find the first task that is not asleep.
 	 */
 
 	runnable = *toRun;
+	while (runnable->sleeping) {
+		toRun++;
+		runnable = *toRun;
+	}
 
 	/**
 	 * Move the iterator forward for next time.
@@ -128,6 +132,7 @@ void Scheduler::start(std::size_t frequency) {
 
 #pragma vector = WDT_VECTOR
 interrupt void Scheduler::preempt(void) {
+
 	/**
 	 * Switch modes.
 	 */

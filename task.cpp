@@ -91,6 +91,7 @@ void Task::idle(void) {
  */
 
 void TaskQueue::addTask(func f, std::size_t stackSize, std::size_t priority) {
+
 	/**
 	 * Since our task queue is going to live on the system stack (the actual stack),
 	 * we heap-allocate our tasks for separation and hold pointers to each task for access.

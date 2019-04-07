@@ -64,6 +64,7 @@ public:
 	static void sleep(std::size_t micros);
 
 private:
+
 	/**
 	 * Singleton for the scheduler. Only one scheduler can run at any point in time!
 	 */
@@ -88,7 +89,8 @@ private:
 	/**
 	 * Fight the compiler calling convention in the scheduler tick by removing unnecessarily pushed registers.
 	 */
-#pragma FUNC_ALWAYS_INLINE
+
+	#pragma FUNC_ALWAYS_INLINE
 	static inline void popAutomaticallyPushedRegisters(void) {
 		asm volatile ( \
 			"   pop r9 \n" \
@@ -104,7 +106,8 @@ private:
 	/**
 	 * Saves system state from before the context switch.
 	 */
-#pragma FUNC_ALWAYS_INLINE
+
+	#pragma FUNC_ALWAYS_INLINE
 	static inline void saveContext(void) {
 		asm volatile ( \
 			"	push r4 \n" \
@@ -125,7 +128,8 @@ private:
 	/**
 	 * Loads system state / context of new task.
 	 */
-#pragma FUNC_ALWAYS_INLINE
+
+	#pragma FUNC_ALWAYS_INLINE
 	static inline void restoreContext(void) {
 		asm volatile ( \
 			"	pop r15 \n" \
@@ -146,19 +150,20 @@ private:
 	/**
 	 * Loads the program counter and status register with the SR & address of the new task.
 	 */
-#pragma FUNC_ALWAYS_INLINE
+
+	#pragma FUNC_ALWAYS_INLINE
 	static inline void jumpToNextTask(void) {
 		asm volatile (
 			" 	reti \n"
 		);
 	}
 
-
 	/**
 	 * When entering the scheduler tick / kernel code, must save the context and switch to the
 	 * system stack for any computation needed.
 	 */
-#pragma FUNC_ALWAYS_INLINE
+
+	#pragma FUNC_ALWAYS_INLINE
 	static inline void enterKernelMode(void) {
 		popAutomaticallyPushedRegisters();
 		saveContext();
@@ -170,7 +175,8 @@ private:
 	 * loading the stack pointer of the new task, popping off the register state, and jumping to the
 	 * function.
 	 */
-#pragma FUNC_ALWAYS_INLINE
+
+	#pragma FUNC_ALWAYS_INLINE
 	static inline void exitKernelMode(const Task *runnable) {
 		_set_SP_register((std::uint16_t) runnable->KernelStackPointer);
 		restoreContext();
@@ -180,7 +186,8 @@ private:
 	/**
 	 * Cleanup function that removes tasks that have returned.
 	 */
-#pragma FUNC_ALWAYS_INLINE
+
+	#pragma FUNC_ALWAYS_INLINE
 	static inline void freeCompletedTasks(void) {
 
 		/**
@@ -223,7 +230,6 @@ private:
 
 				Scheduler::sched->queue.pop(TaskToBeFreed);
 			} else {
-//				(*TaskIterator)->KernelStackPointer[15] = (*TaskIterator)->KernelStackPointer[13];
 
 				/**
 				 * Otherwise, move on to the next task in the list.
