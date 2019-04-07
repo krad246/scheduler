@@ -104,4 +104,6 @@ void TaskQueue::addTask(func f, std::size_t stackSize, std::size_t priority) {
 	 */
 
 	push_back(proc);
+
+	tickets += priority;
 }

@@ -130,8 +130,28 @@ inline auto multiply(T1 x, T2 y) {
 	return ans;
 }
 
-template <class T1, class T2>
-auto modulus(T1 x, T2 y);
+//template <class T1, class T2>
+//auto modulus(T1 x, T2 y);
+
+inline std::size_t mod(std::size_t a, std::size_t b) {
+	std::size_t k = 0;
+
+	while (a - multiply(k, b) >= b) {
+		++k;
+	}
+
+	return a - multiply(k, b);
+}
+
+template <class T>
+inline T nextHighestPowerOfTwo(T x) {
+	x--;
+	for (std::size_t i = 0; i < sizeof(x) << 3; ++i) {
+		x |= (x >> i);
+	}
+	x++;
+	return x;
+}
 
 /**
  * XORShift random number generator for various widths. The period of a XORShift generator with width N

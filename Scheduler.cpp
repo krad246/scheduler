@@ -11,25 +11,81 @@ Scheduler *Scheduler::sched = nullptr;
 std::uint16_t *Scheduler::SchedStackPointer = nullptr;
 
 Task *Scheduler::lottery(Scheduler *arg) {
+
+	/**
+	 * Grab the scheduler instance.
+	 */
+
 	const Scheduler& sched = *arg;
 
-	const std::uint16_t draw = rand<16>();
-	std::size_t ticketSum = 0;
+	/**
+	 * Loop through the interval [0, pool) and see if the draw is in an interval
+	 * [X1, X2) where X2 - X1 = task.tickets.
+	 */
 
-	std::size_t size = sched.queue.size();
-	for (std::size_t i = 0;  i < size; ++i) {
-		ticketSum += sched.queue[i]->priority;
-	}
+	/**
+	 * Retrieve the 'pool of tickets' from the queue of tasks. We drop idle() by default.
+	 */
+
+	volatile const std::size_t pool = sched.queue.tickets - 1;
+
+	/**
+	 * Compute a random number for the lottery 'draw'.
+	 */
+
+	volatile const std::size_t draw = rand<32>();
+
+	/**
+	 *  Map that into the range of tickets via modulo(). This is an approximation to the modulo function.
+	 */
+
+//	volatile const std::size_t map = draw & (nextHighestPowerOfTwo(pool) - 1);
+	volatile const std::size_t map = multiply(draw, pool) >> (sizeof(std::size_t) << 3);
+
+	/**
+	 * Maintain an iterator that loops through and a count of how many tasks to go through.
+	 */
+
+	ListIterator<Task *> task = sched.queue.begin();
+	const std::size_t sz = sched.queue.size();
+
+	/**
+	 * Maintain the interval boundaries.
+	 */
 
 	std::size_t lowerTicketBound = 0;
 	std::size_t higherTicketBound = 0;
-	for (std::size_t i = 0; i < size; ++i) {
-		lowerTicketBound += sched.queue[i]->priority;
 
-		higherTicketBound += sched.queue[i]->priority;
+	/**
+	 * Loop through the 'pool' of tickets by using the interval variables to create a 'slice'
+	 * corresponding to a task. If the random draw is within range, then this is the task that
+	 * will be picked.
+	 */
+
+	for (std::size_t i = 0; i < sz; ++i) {
+
+		/**
+		 * If we see idle(), we skip it without counting its tickets at all.
+		 */
+
+		const volatile std::uint16_t retAddress = (*task)->KernelStackPointer[15];
+		if (retAddress == (std::uint16_t) Task::idle) {
+			task++;
+			continue;
+		}
+
+		/**
+		 * Otherwise, we iterate normally and perform the bounds checks as usual. When we are in
+		 * the right interval, we return the task that spans that cut.
+		 */
+
+		higherTicketBound += (*task)->priority;
+		if (lowerTicketBound <= map && map < higherTicketBound) break;
+		lowerTicketBound += (*task)->priority;
+		task++;
 	}
 
-	return sched.queue.front();
+	return *task;
 }
 
 /**
@@ -47,6 +103,7 @@ Task *Scheduler::roundRobin(Scheduler *arg) {
 	/**
 	 * Maintain an iterator that continually loops through.
 	 */
+
 	static ListIterator<Task *> toRun = sched.queue.begin();
 
 	/**
@@ -60,7 +117,6 @@ Task *Scheduler::roundRobin(Scheduler *arg) {
 	 * increment the iterator to skip it.
 	 */
 
-	const volatile std::uint16_t node = (std::uint16_t) runnable;
 	const volatile std::uint16_t retAddress = runnable->KernelStackPointer[15];
 	if (retAddress == (std::uint16_t) Task::idle) {
 		toRun++;

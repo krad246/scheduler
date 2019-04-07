@@ -89,6 +89,8 @@ public:
 
 private:
 	friend class Scheduler;
+
+	std::size_t tickets = 0;
 };
 
 #endif /* TASK_H_ */
