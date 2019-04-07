@@ -29,7 +29,7 @@ Task *Scheduler::lottery(Scheduler *arg) {
 	 * If idle() is the only runnable function at all, then we just return the idle hook.
 	 */
 
-	const std::size_t numSleeping = sched.queue.numSleeping;
+	const std::size_t numSleeping = sched.numSleeping;
 	if (numSleeping == sz - 1) {
 		return *task;
 	}
@@ -43,7 +43,7 @@ Task *Scheduler::lottery(Scheduler *arg) {
 	 * Retrieve the 'pool of tickets' from the queue of tasks. We drop idle() by default.
 	 */
 
-	const std::size_t pool = sched.queue.tickets - 1;
+	const std::size_t pool = sched.tickets - 1;
 
 	/**
 	 * Compute a random number for the lottery 'draw'.
@@ -124,7 +124,7 @@ Task *Scheduler::roundRobin(Scheduler *arg) {
 	 */
 
 	const std::uint16_t retAddress = (*task)->KernelStackPointer[15];
-	const std::size_t numSleeping = sched.queue.numSleeping;
+	const std::size_t numSleeping = sched.numSleeping;
 	if (retAddress == (std::uint16_t) Task::idle) {
 		if (numSleeping != sched.queue.size() - 1) {
 			task++;
@@ -161,12 +161,22 @@ Task *Scheduler::roundRobin(Scheduler *arg) {
 Scheduler::Scheduler(TaskQueue& tasks, SchedulingMethod method) : queue(tasks) {
 
 	/**
-	 * Grab the list of tasks and inject the idle hook into it if it is empty. The system must always be running
+	 * Grab the list of tasks and inject the idle hook into it. The system must always be running
 	 * something.
 	 */
 
 	queue = tasks;
-	if (tasks.size() == 0) queue.addTask(Task::idle);
+	queue.addTask(Task::idle);
+
+	/**
+	 * If the lottery scheduler is enabled, then total up the tickets.
+	 */
+
+	ListIterator<Task *> task = queue.begin();
+	for (std::size_t i = 0; i < queue.size(); ++i) {
+		tickets += (*task)->priority;
+	}
+
 
 	/**
 	 * Set the scheduling method.

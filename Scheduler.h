@@ -11,7 +11,8 @@
 #include <msp430.h>
 #include <Math.h>
 #include <SystemClock.h>
-#include "Task.h"
+#include <Task.h>
+#include <type_traits>
 
 /**
  * Forward declarations of other classes that work with the Scheduler class.
@@ -48,7 +49,7 @@ public:
 	 * and a scheduling method to pick the next task to run.
 	 */
 
-	Scheduler(TaskQueue& tasks, SchedulingMethod method = Scheduler::roundRobin);
+	Scheduler(TaskQueue& tasks, SchedulingMethod method = roundRobin);
 
 	/**
 	 * Starts the scheduler, which starts the system clock and logs the top of the system stack.
@@ -85,6 +86,13 @@ private:
 
 	TaskQueue &queue;
 	SchedulingMethod callback;
+
+	/**
+	 * System state including number of tasks sleeping and, if the lottery scheduler is enabled, ticket count.
+	 */
+
+	std::size_t numSleeping = 0;
+	std::size_t tickets = 0;
 
 	/**
 	 * Fight the compiler calling convention in the scheduler tick by removing unnecessarily pushed registers.
