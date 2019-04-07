@@ -90,6 +90,7 @@ public:
 private:
 	friend class Scheduler;
 
+	std::size_t numSleeping = 0;
 	std::size_t tickets = 0;
 };
 

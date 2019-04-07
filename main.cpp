@@ -15,20 +15,12 @@ void foo(void) {
 void bar(void) {
 	while (1) {
 		y++;
-		if (y - yold >= 16384) {
-			yold = y;
-			P1OUT ^= BIT0;
-		}
 	}
 }
 
 void baz(void) {
 	while (1) {
 		z++;
-		if (z - zold >= 16384) {
-			zold = z;
-			P1OUT ^= BIT6;
-		}
 	}
 }
 

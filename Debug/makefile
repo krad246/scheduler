@@ -10,7 +10,6 @@ GEN_OPTS__FLAG :=
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
-"./Math.obj" \
 "./Scheduler.obj" \
 "./SystemClock.obj" \
 "./Task.obj" \
@@ -158,8 +157,8 @@ sched.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "Math.obj" "Scheduler.obj" "SystemClock.obj" "Task.obj" "main.obj" 
-	-$(RM) "Math.d" "Scheduler.d" "SystemClock.d" "Task.d" "main.d" 
+	-$(RM) "Scheduler.obj" "SystemClock.obj" "Task.obj" "main.obj" 
+	-$(RM) "Scheduler.d" "SystemClock.d" "Task.d" "main.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 
