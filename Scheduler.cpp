@@ -175,6 +175,7 @@ Scheduler::Scheduler(TaskQueue& tasks, SchedulingMethod method) : queue(tasks) {
 	ListIterator<Task *> task = queue.begin();
 	for (std::size_t i = 0; i < queue.size(); ++i) {
 		tickets += (*task)->priority;
+		task++;
 	}
 
 
