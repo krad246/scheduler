@@ -78,18 +78,7 @@ Task *Scheduler::lottery(Scheduler *arg) {
 		 */
 
 		const std::uint16_t retAddress = (*task)->KernelStackPointer[15];
-		if (retAddress == (std::uint16_t) Task::idle) {
-
-			/**
-			 * Check if N - 1 (all tasks other than the idle hook) are asleep. If so, then we have to exit with this.
-			 * Otherwise we can skip the idle hook. This should run faster in the case of all but 1 task sleeping.
-			 */
-
-			const std::size_t sz = sched.queue.size();
-			const std::size_t numSleeping = sched.numSleeping;
-			if (numSleeping != sz - 1) task++;
-			else break;
-		}
+		if (retAddress == (std::uint16_t) Task::idle) task++;
 
 		/**
 		 * Sleeping tasks are skipped entirely. This is for the cases where not all of the possible tasks are sleeping.
