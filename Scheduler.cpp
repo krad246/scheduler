@@ -73,13 +73,27 @@ Task *Scheduler::lottery(Scheduler *arg) {
 	for (std::size_t i = 0; i < sz; ++i) {
 
 		/**
-		 * If we see idle(), we skip it without counting its tickets at all.
+		 * If we see idle(), we skip it without counting its tickets at all, UNLESS the idle function is the only
+		 * task we can run at all.
 		 */
 
 		const std::uint16_t retAddress = (*task)->KernelStackPointer[15];
 		if (retAddress == (std::uint16_t) Task::idle) {
-			task++;
+
+			/**
+			 * Check if N - 1 (all tasks other than the idle hook) are asleep. If so, then we have to exit with this.
+			 * Otherwise we can skip the idle hook. This should run faster in the case of all but 1 task sleeping.
+			 */
+
+			const std::size_t sz = sched.queue.size();
+			const std::size_t numSleeping = sched.numSleeping;
+			if (numSleeping != sz - 1) task++;
+			else break;
 		}
+
+		/**
+		 * Sleeping tasks are skipped entirely. This is for the cases where not all of the possible tasks are sleeping.
+		 */
 
 		if ((*task)->sleeping) {
 			task++;
@@ -96,7 +110,6 @@ Task *Scheduler::lottery(Scheduler *arg) {
 		lowerTicketBound += (*task)->priority;
 		task++;
 	}
-
 	return *task;
 }
 
@@ -119,39 +132,64 @@ Task *Scheduler::roundRobin(Scheduler *arg) {
 	static ListIterator<Task *> task = sched.queue.begin();
 
 	/**
-	 * Grab the return address held in the kernel stack. If it is the idle hook,
-	 * increment the iterator to skip it unless all other tasks are sleeping.
+	 * For weighted round robin scheduling, there needs to be a notion of the number of times
+	 * a task has been allowed to run. Only once the task has been run for its weight of time are
+	 * we allowed to move to the next task.
 	 */
 
-	const std::uint16_t retAddress = (*task)->KernelStackPointer[15];
-	const std::size_t numSleeping = sched.numSleeping;
-	if (retAddress == (std::uint16_t) Task::idle) {
-		if (numSleeping != sched.queue.size() - 1) {
-			task++;
-		} else return *task;
-	}
+	static std::size_t numTimesRun = 0;
+	const bool TaskRunEnoughTimes = (numTimesRun >= (*task)->priority);
 
 	/**
-	 * Scan ahead and find the first task that is not asleep.
+	 * If the current task has run enough times, reset the counter. In the event this happens, find a new task to run.
+	 * Check for the first task that is not sleeping and also is not the idle hook.
 	 */
 
-	while ((*task)->sleeping) {
+	if (TaskRunEnoughTimes) {
+
+		/**
+		 * Reset the counter and move the task iterator forward so the same thing doesn't get rerun.
+		 */
+
+		numTimesRun = 0;
 		task++;
+
+		/**
+		 * Need to compare the return address of each task to the idle hook; if it isn't the idle hook and it isn't
+		 * sleeping, then this is a valid task to run.
+		 */
+
+		/**
+		 * Find the first task in the list that ISN'T sleeping.
+		 */
+
+		while ((*task)->sleeping) task++;
+
+		/**
+		 * Grab the return address held in the kernel stack. If it is the idle hook,
+		 * increment the iterator to skip it unless all other tasks are sleeping.
+		 */
+
+		const std::size_t retAddress = (*task)->KernelStackPointer[15];
+		if (retAddress == (std::uint16_t) Task::idle) {
+
+			/**
+			 * If N - 1 tasks (the other one is the idle hook) are asleep, then the idle hook is all we can run.
+			 * Otherwise, skip the idle hook.
+			 */
+
+			const std::size_t sz = sched.queue.size();
+			const std::size_t numSleeping = sched.numSleeping;
+			if (numSleeping != sz - 1) task++;
+		}
 	}
 
 	/**
-	 * Return the task that isn't asleep.
+	 * Leave with this task, incrementing its run counter.
 	 */
 
-	ListIterator<Task *> runnable = task;
-
-	/**
-	 * Move the iterator forward for next time.
-	 */
-
-	task++;
-
-	return *runnable;
+	numTimesRun++;
+	return *task;
 }
 
 /**
