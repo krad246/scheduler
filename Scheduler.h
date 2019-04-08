@@ -95,23 +95,6 @@ private:
 	std::size_t tickets = 0;
 
 	/**
-	 * Fight the compiler calling convention in the scheduler tick by removing unnecessarily pushed registers.
-	 */
-
-	#pragma FUNC_ALWAYS_INLINE
-	static inline void popAutomaticallyPushedRegisters(void) {
-		asm volatile ( \
-			"   pop r9 \n" \
-			"	pop r10 \n" \
-			"   pop r11 \n" \
-			"   pop r12 \n" \
-			"	pop r13 \n" \
-			"	pop r14 \n" \
-			"	pop r15 \n" \
-		);
-	}
-
-	/**
 	 * Saves system state from before the context switch.
 	 */
 
@@ -173,7 +156,6 @@ private:
 
 	#pragma FUNC_ALWAYS_INLINE
 	static inline void enterKernelMode(void) {
-		popAutomaticallyPushedRegisters();
 		saveContext();
 		_set_SP_register((std::uint16_t) SchedStackPointer);
 	}

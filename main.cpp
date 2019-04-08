@@ -47,9 +47,9 @@ int main(void) {
 	x.addTask(bar, 0, 5);
 	x.addTask(baz, 0, 3);
 
-	Scheduler s(x, Scheduler::lottery);
+	Scheduler s(x);
 	P1DIR = BIT0 | BIT6;
-	s.start((std::size_t) 1000000);
+	s.start((std::size_t) 16000000);
 	_low_power_mode_0();
 	return 0;
 }

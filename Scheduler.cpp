@@ -237,7 +237,7 @@ void Scheduler::start(std::size_t frequency) {
  */
 
 #pragma vector = WDT_VECTOR
-interrupt void Scheduler::preempt(void) {
+__attribute__((naked, interrupt)) void Scheduler::preempt(void) {
 
 	/**
 	 * Switch modes.
