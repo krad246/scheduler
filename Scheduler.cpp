@@ -9,29 +9,24 @@
 
 Scheduler *Scheduler::sched = nullptr;
 std::uint16_t *Scheduler::SchedStackPointer = nullptr;
+ListIterator<Task *> Scheduler::currProc = Scheduler::sched->queue.begin();
 
-Task *Scheduler::lottery(Scheduler *arg) {
-
-	/**
-	 * Grab the scheduler instance.
-	 */
-
-	const Scheduler& sched = *arg;
+void Scheduler::lottery(void) {
 
 	/**
 	 * Maintain an iterator that loops through and a count of how many tasks to go through.
 	 */
 
-	ListIterator<Task *> task = sched.queue.begin();
-	const std::size_t sz = sched.queue.size();
+	ListIterator<Task *> task = Scheduler::sched->queue.begin();
+	const std::size_t sz = Scheduler::sched->queue.size();
 
 	/**
 	 * If idle() is the only runnable function at all, then we just return the idle hook.
 	 */
 
-	const std::size_t numSleeping = sched.numSleeping;
+	const std::size_t numSleeping = Scheduler::sched->numSleeping;
 	if (numSleeping == sz - 1) {
-		return *task;
+		return;
 	}
 
 	/**
@@ -43,7 +38,7 @@ Task *Scheduler::lottery(Scheduler *arg) {
 	 * Retrieve the 'pool of tickets' from the queue of tasks. We drop idle() by default.
 	 */
 
-	const std::size_t pool = sched.tickets - 1;
+	const std::size_t pool = Scheduler::sched->tickets - 1;
 
 	/**
 	 * Compute a random number for the lottery 'draw'.
@@ -99,26 +94,25 @@ Task *Scheduler::lottery(Scheduler *arg) {
 		lowerTicketBound += (*task)->priority;
 		task++;
 	}
-	return *task;
+
+	/**
+	 * Update currProc with the task chosen and leave.
+	 */
+
+	Scheduler::currProc = task;
 }
 
 /**
  * Round robin scheduling method; loops through task list linearly.
  */
 
-Task *Scheduler::roundRobin(Scheduler *arg) {
-
-	/**
-	 * Grab the scheduler instance.
-	 */
-
-	const Scheduler& sched = *arg;
+void Scheduler::roundRobin(void) {
 
 	/**
 	 * Maintain an iterator that continually loops through.
 	 */
 
-	static ListIterator<Task *> task = sched.queue.begin();
+	ListIterator<Task *> task = Scheduler::currProc;
 
 	/**
 	 * For weighted round robin scheduling, there needs to be a notion of the number of times
@@ -167,18 +161,18 @@ Task *Scheduler::roundRobin(Scheduler *arg) {
 			 * Otherwise, skip the idle hook.
 			 */
 
-			const std::size_t sz = sched.queue.size();
-			const std::size_t numSleeping = sched.numSleeping;
+			const std::size_t sz = Scheduler::sched->queue.size();
+			const std::size_t numSleeping = Scheduler::sched->numSleeping;
 			if (numSleeping != sz - 1) task++;
 		}
 	}
 
 	/**
-	 * Leave with this task, incrementing its run counter.
+	 * Leave with this task, incrementing its run counter. Update currProc with the task chosen.
 	 */
 
 	numTimesRun++;
-	return *task;
+	Scheduler::currProc = task;
 }
 
 /**
@@ -209,7 +203,7 @@ Scheduler::Scheduler(TaskQueue& tasks, SchedulingMethod method) : queue(tasks) {
 	 * Set the scheduling method.
 	 */
 
-	callback = method;
+	schedule = method;
 
 	/**
 	 * Singleton pattern. If this is the first instance of the scheduler being built, set the singleton
@@ -222,18 +216,112 @@ Scheduler::Scheduler(TaskQueue& tasks, SchedulingMethod method) : queue(tasks) {
 
 /**
  * Start the scheduler by configuring the clock modules and keeping track of the system stack
- * state so it can be used later.
+ * state so it can be used later, as well as actually queueing up a task.
  */
 
 void Scheduler::start(std::size_t frequency) {
+	currProc = queue.begin();
 	SchedStackPointer = (std::uint16_t *) _get_SP_register();
 	SystemClock::StartSystemClock(frequency);
 }
 
 /**
+ * Saves system state from before the context switch.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::saveContext(void) {
+	asm volatile ( \
+		"	push r4 \n" \
+		"	push r5 \n" \
+		"	push r6 \n" \
+		"	push r7 \n" \
+		"	push r8 \n" \
+		"	push r9 \n" \
+		"	push r10 \n" \
+		"	push r11 \n" \
+		"	push r12 \n" \
+		"	push r13 \n" \
+		"	push r14 \n" \
+		"	push r15 \n" \
+	);
+}
+
+/**
+ * Loads system state / context of new task.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::restoreContext(void) {
+	asm volatile ( \
+		"	pop r15 \n" \
+		"	pop r14 \n" \
+		"	pop r13 \n" \
+		"	pop r12 \n" \
+		"	pop r11 \n" \
+		"	pop r10 \n" \
+		"	pop r9 \n" \
+		"	pop r8 \n" \
+		"	pop r7 \n" \
+		"	pop r6 \n" \
+		"	pop r5 \n" \
+		"	pop r4 \n" \
+	);
+}
+
+/**
+ * Loads the program counter and status register with the SR & address of the new task.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::jumpToNextTask(void) {
+	asm volatile (
+		" 	reti \n"
+	);
+}
+
+/**
+ * When entering the scheduler tick / kernel code, must save the context and switch to the
+ * system stack for any computation needed.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::enterKernelMode(void) {
+	Scheduler::saveContext();
+	_set_SP_register((std::uint16_t) Scheduler::SchedStackPointer);
+}
+
+/**
+ * When exiting the scheduler tick / kernel code, must restore the context of the new function by
+ * loading the stack pointer of the new task, popping off the register state, and jumping to the
+ * function.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::exitKernelMode(void) {
+	_set_SP_register((std::uint16_t) (*Scheduler::currProc)->KernelStackPointer);
+	restoreContext();
+	jumpToNextTask();
+}
+
+/**
+ * Cleanup function that removes tasks that have returned. Figure out which process has returned, move the
+ * process pointer forward so it doesn't become invalid, then pop the task to be removed.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::freeCompletedTasks(void) {
+	if ((*Scheduler::currProc)->complete()) {
+		ListIterator<Task *> TaskToBeFreed = Scheduler::currProc;
+		Scheduler::currProc++;
+		Scheduler::sched->queue.pop(TaskToBeFreed);
+	}
+}
+
+/**
  * Scheduler tick that performs the context switch. Interrupt switches system to kernel mode,
  * updates system time, cleans up any finished tasks, figures out what to run next, then exits
- * kernel mode by loading the state of the runnable.
+ * kernel mode by loading the runnable.
  */
 
 #pragma vector = WDT_VECTOR
@@ -256,11 +344,11 @@ __attribute__((naked, interrupt)) void Scheduler::preempt(void) {
 	 * Prep for the next function.
 	 */
 
-	const Task *runnable = sched->callback(sched);
+	Scheduler::sched->schedule();
 
 	/**
 	 * Jump to the next function.
 	 */
 
-	Scheduler::exitKernelMode(runnable);
+	Scheduler::exitKernelMode();
 }

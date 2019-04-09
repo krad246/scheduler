@@ -9,10 +9,10 @@
 #define SCHEDULER_H_
 
 #include <msp430.h>
-#include <Math.h>
-#include <SystemClock.h>
-#include <Task.h>
 #include <type_traits>
+#include <Math.h>
+#include <Task.h>
+#include <SystemClock.h>
 
 /**
  * Forward declarations of other classes that work with the Scheduler class.
@@ -33,7 +33,7 @@ public:
 	 * Function typedef for functions that return tasks based on some scheduling algorithm.
 	 */
 
-	using SchedulingMethod = Task *(*)(Scheduler *);
+	using SchedulingMethod = void (*)(void);
 
 	/**
 	 * Scheduling methods supported:
@@ -41,8 +41,8 @@ public:
 	 * - Lottery - Probabilistically pick a task based on the priority weight it has.
 	 */
 
-	static Task *lottery(Scheduler *arg);
-	static Task *roundRobin(Scheduler *arg);
+	static void lottery(void);
+	static void roundRobin(void);
 
 	/**
 	 * Scheduler constructor; takes a pointer to a task queue so it can operate on it (add / remove tasks)
@@ -79,13 +79,19 @@ private:
 	static std::uint16_t *SchedStackPointer;
 
 	/**
+	 * Most recently picked task. Used to figure out cleanup / sleep state.
+	 */
+
+	static ListIterator<Task *> currProc;
+
+	/**
 	 * Instance variables for the scheduler so that it can change on the fly.
 	 * Scheduler takes a pointer to a task queue so that it can be replaced / modified and
 	 * a callback function to determine the next function to run.
 	 */
 
 	TaskQueue &queue;
-	SchedulingMethod callback;
+	SchedulingMethod schedule;
 
 	/**
 	 * System state including number of tasks sleeping and, if the lottery scheduler is enabled, ticket count.
@@ -95,141 +101,39 @@ private:
 	std::size_t tickets = 0;
 
 	/**
-	 * Saves system state from before the context switch.
+	 * Functions that have to run every time a context switch has to happen.
 	 */
-
-	#pragma FUNC_ALWAYS_INLINE
-	static inline void saveContext(void) {
-		asm volatile ( \
-			"	push r4 \n" \
-			"	push r5 \n" \
-			"	push r6 \n" \
-			"	push r7 \n" \
-			"	push r8 \n" \
-			"	push r9 \n" \
-			"	push r10 \n" \
-			"	push r11 \n" \
-			"	push r12 \n" \
-			"	push r13 \n" \
-			"	push r14 \n" \
-			"	push r15 \n" \
-		);
-	}
 
 	/**
-	 * Loads system state / context of new task.
+	 * Saves register state of the system at the point of the interrupt.
 	 */
 
-	#pragma FUNC_ALWAYS_INLINE
-	static inline void restoreContext(void) {
-		asm volatile ( \
-			"	pop r15 \n" \
-			"	pop r14 \n" \
-			"	pop r13 \n" \
-			"	pop r12 \n" \
-			"	pop r11 \n" \
-			"	pop r10 \n" \
-			"	pop r9 \n" \
-			"	pop r8 \n" \
-			"	pop r7 \n" \
-			"	pop r6 \n" \
-			"	pop r5 \n" \
-			"	pop r4 \n" \
-		);
-	}
+	static void saveContext(void);
 
 	/**
-	 * Loads the program counter and status register with the SR & address of the new task.
+	 * Restores register state from a trapframe located in the kernel stack of a program.
 	 */
 
-	#pragma FUNC_ALWAYS_INLINE
-	static inline void jumpToNextTask(void) {
-		asm volatile (
-			" 	reti \n"
-		);
-	}
+	static void restoreContext(void);
 
 	/**
-	 * When entering the scheduler tick / kernel code, must save the context and switch to the
-	 * system stack for any computation needed.
+	 * Completes a task switch by loading the program counter with the address of the new task.
 	 */
 
-	#pragma FUNC_ALWAYS_INLINE
-	static inline void enterKernelMode(void) {
-		saveContext();
-		_set_SP_register((std::uint16_t) SchedStackPointer);
-	}
+	static void jumpToNextTask(void);
 
 	/**
-	 * When exiting the scheduler tick / kernel code, must restore the context of the new function by
-	 * loading the stack pointer of the new task, popping off the register state, and jumping to the
-	 * function.
+	 * Wrapper functions that do a combination of all of the tasks above.
 	 */
 
-	#pragma FUNC_ALWAYS_INLINE
-	static inline void exitKernelMode(const Task *runnable) {
-		_set_SP_register((std::uint16_t) runnable->KernelStackPointer);
-		restoreContext();
-		jumpToNextTask();
-	}
+	static void enterKernelMode(void);
+	static void exitKernelMode(void);
 
 	/**
-	 * Cleanup function that removes tasks that have returned.
+	 * Deletes tasks that have completed.
 	 */
 
-	#pragma FUNC_ALWAYS_INLINE
-	static inline void freeCompletedTasks(void) {
-
-		/**
-		 * Get an iterator to loop over the task queue.
-		 */
-
-		register ListIterator<Task *> TaskIterator = sched->queue.begin();
-
-		/**
-		 * Loop over each of the tasks in the queue. For each task, check if it has completed;
-		 * if it has returned twice, then the status register will overwrite the function
-		 * return address. Maintain a pointer to the task that has completed, advance the iterator
-		 * so it doesn't become invalid, then delete the completed task.
-		 */
-
-		for (std::size_t i = 0; i < Scheduler::sched->queue.size(); ++i) {
-
-			/**
-			 * Check if the task is complete.
-			 */
-
-			if ((*TaskIterator)->complete()) {
-
-				/**
-				 * Maintain a pointer to the completed task; it will be freed.
-				 */
-
-				ListIterator<Task *> TaskToBeFreed = TaskIterator;
-
-				/**
-				 * Move forward before deleting this task from the queue so that the underlying
-				 * linked list can maintain connectivity without invalidating the iterator.
-				 */
-
-				TaskIterator++;
-
-				/**
-				 * Pop the task from the task queue and remove its tickets.
-				 */
-
-				sched->tickets -= (*TaskToBeFreed)->priority;
-				Scheduler::sched->queue.pop(TaskToBeFreed);
-			} else {
-
-				/**
-				 * Otherwise, move on to the next task in the list.
-				 */
-
-				TaskIterator++;
-			}
-		}
-	}
+	static void freeCompletedTasks(void);
 
 	/**
 	 * Scheduler tick / preemption function.
