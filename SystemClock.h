@@ -37,24 +37,7 @@ public:
 	 * Updates the internal timing state of the system in milliseconds and microseconds.
 	 */
 
-	static inline void UpdateSystemTime(void) {
-
-		/**
-		 * One tick of the system clock takes some number of microseconds, so that is the time passage.
-		 */
-
-		micros += microsPerTick;
-
-		/**
-		 * Compute the microsecond value modulo 1 millisecond. Put the 'rest' in the millisecond timer.
-		 */
-
-		fractionalMillis += microsPerTick;
-		if (fractionalMillis > 1000) {
-			fractionalMillis -= 1000;
-			millis += 1;
-		}
-	}
+	static void UpdateSystemTime(void);
 
 private:
 	friend class Scheduler;

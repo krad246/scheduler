@@ -9,11 +9,13 @@
 #define DEPENDS_H_
 
 #include <msp430.h>
-#include <SystemClock.h>
-#include <Scheduler.h>
-#include <List.h>
-#include <Task.h>
-#include <Math.h>
 
+#include <Math.h>
+#include <List.h>
+
+#include <Task.h>
+#include <Scheduler.h>
+
+#include <SystemClock.h>
 
 #endif /* DEPENDS_H_ */

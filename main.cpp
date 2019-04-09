@@ -36,6 +36,7 @@ void baz(void) {
 		if (z >= 16384) {
 			zold = z;
 			P1OUT &= ~(BIT0 | BIT6);
+			break;
 		}
 	}
 }
@@ -47,7 +48,7 @@ int main(void) {
 	x.addTask(bar, 0, 5);
 	x.addTask(baz, 0, 3);
 
-	Scheduler s(x);
+	Scheduler s(x, Scheduler::roundRobin);
 	P1DIR = BIT0 | BIT6;
 	s.start((std::size_t) 16000000);
 	_low_power_mode_0();
