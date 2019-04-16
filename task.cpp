@@ -65,7 +65,7 @@ Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(prior
  */
 
 Task::~Task() {
-	delete Stack;
+	delete[] Stack;
 }
 
 /**

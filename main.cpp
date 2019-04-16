@@ -12,6 +12,7 @@ void foo(void) {
 		x++;
 
 		if (x >= 16384) {
+			Scheduler::sleep(20);
 			xold = x;
 			P1OUT ^= BIT0;
 		}

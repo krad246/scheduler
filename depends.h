@@ -13,9 +13,8 @@
 #include <Math.h>
 #include <List.h>
 
-#include <Task.h>
-#include <Scheduler.h>
-
 #include <SystemClock.h>
+#include <Scheduler.h>
+#include <Task.h>
 
 #endif /* DEPENDS_H_ */

@@ -226,6 +226,25 @@ void Scheduler::start(std::size_t frequency) {
 }
 
 /**
+ * Sleep for the specified duration in milliseconds.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+void Scheduler::sleep(std::size_t millis) {
+
+	/**
+	 * Update time stamp, then call the scheduler tick.
+	 */
+
+	(*Scheduler::currProc)->timeStamp = SystemClock::millis;
+	(*Scheduler::currProc)->duration = millis;
+	(*Scheduler::currProc)->sleeping = true;
+
+	Scheduler::sched->numSleeping++;
+	preempt();
+}
+
+/**
  * Saves system state from before the context switch.
  */
 
@@ -287,6 +306,7 @@ inline void Scheduler::jumpToNextTask(void) {
 
 #pragma FUNC_ALWAYS_INLINE
 inline void Scheduler::enterKernelMode(void) {
+	if ((*Scheduler::currProc)->sleeping) asm volatile(" 	push r2\n");
 	Scheduler::saveContext();
 	_set_SP_register((std::uint16_t) Scheduler::SchedStackPointer);
 }
@@ -318,6 +338,21 @@ inline void Scheduler::freeCompletedTasks(void) {
 	}
 }
 
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::wakeSleepingTasks(void) {
+	ListIterator<Task *> TaskIterator = Scheduler::sched->queue.begin();
+	const std::size_t sz = Scheduler::sched->queue.size();
+
+	for (std::size_t i = 0; i < sz; i++) {
+		if ((*TaskIterator)->sleeping) {
+			if (SystemClock::millis >= (*TaskIterator)->timeStamp + (*TaskIterator)->duration) {
+				(*TaskIterator)->sleeping = false;
+				Scheduler::sched->numSleeping--;
+			}
+		}
+	}
+}
+
 /**
  * Scheduler tick that performs the context switch. Interrupt switches system to kernel mode,
  * updates system time, cleans up any finished tasks, figures out what to run next, then exits
@@ -339,6 +374,7 @@ __attribute__((naked, interrupt)) void Scheduler::preempt(void) {
 
 	SystemClock::UpdateSystemTime();
 	Scheduler::freeCompletedTasks();
+	Scheduler::wakeSleepingTasks();
 
 	/**
 	 * Prep for the next function.
