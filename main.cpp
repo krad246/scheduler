@@ -10,12 +10,6 @@ static volatile std::uint32_t zold = 0;
 void foo(void) {
 	while (1) {
 		x++;
-
-		if (x >= 16384) {
-//			Scheduler::sleep(1);
-			xold = x;
-			P1OUT ^= BIT0;
-		}
 	}
 }
 
@@ -23,22 +17,12 @@ void bar(void) {
 	while (1) {
 		y++;
 
-		if (y >= 16384) {
-//			Scheduler::sleep(1);
-			yold = y;
-			P1OUT ^= BIT6;
-		}
 	}
 }
 
 void baz(void) {
 	while (1) {
 		z++;
-
-		if (z >= 16384) {
-			zold = z;
-			P1OUT &= ~(BIT0 | BIT6);
-		}
 	}
 }
 
