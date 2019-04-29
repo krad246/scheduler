@@ -51,6 +51,8 @@ void Scheduler::lottery(void) {
 	 */
 
 	const std::size_t map = multiply(draw, pool) >> (sizeof(std::size_t) << 3);
+//	const auto dmp = divmod(draw, pool);
+//	const std::size_t map = dmp.remainder;
 
 	/**
 	 * Maintain the interval boundaries.

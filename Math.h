@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <limits>
 
 /**
  * Helper templates to get types from sizes or typenames.
@@ -130,17 +131,200 @@ inline auto multiply(T1 x, T2 y) {
 	return ans;
 }
 
-//template <class T1, class T2>
-//auto modulus(T1 x, T2 y);
+/**
+ * Pair return type for divmod().
+ */
 
-inline std::size_t mod(std::size_t a, std::size_t b) {
-	std::size_t k = 0;
+template <class T>
+struct DivModPair {
+	T quotient;
+	T remainder;
+};
 
-	while (a - multiply(k, b) >= b) {
-		++k;
+/**
+ * Computes the integer division and modulus of two numbers.
+ */
+
+template <class T1, class T2>
+inline auto divmod(T1 x, T2 y) {
+
+	/**
+	 * Calculate which type is larger by comparing max values. The quotient and remainder have to be able to hold
+	 * values at most as large as the larger type of the two.
+	 */
+
+	constexpr bool bigger = std::numeric_limits<T1>::max() > std::numeric_limits<T2>::max();
+	using BiggerType = typename std::conditional<bigger, T1, T2>::type;
+
+	/**
+	 * If the bigger type of the two is unsigned and the smaller type is signed, then we have to widen the result return type
+	 * to be as large as the first signed type larger than the bigger type. This is to hold infinity values or large positives.
+	 */
+
+	using SmallerType = typename std::conditional<bigger, T2, T1>::type;
+	constexpr bool biggerTypeUnsigned = std::is_unsigned<BiggerType>::value && std::is_signed<SmallerType>::value;
+	using UnsignedBiggerType = typename std::make_unsigned<BiggerType>::type;
+
+	/**
+	 * Performs widen operation in the event a widen operation is needed.
+	 */
+
+	using DivType = typename std::conditional <
+		biggerTypeUnsigned,
+		typename NextSize<UnsignedBiggerType>::type,
+		UnsignedBiggerType
+	>::type;
+
+	/**
+	 * Return type may be signed. If both arguments aren't signed, use an unsigned type.
+	 */
+
+	constexpr bool signNotNeeded = std::is_unsigned<T1>::value && std::is_unsigned<T2>::value;
+	using RetType = typename std::conditional <
+		signNotNeeded, DivType, typename std::make_signed<DivType>::type
+	>::type;
+
+	/**
+	 * Convert arguments to unsigned for unsigned shift-and-subtract division routine.
+	 */
+
+	register RetType dividend = x < static_cast<RetType>(0) ? -x : x;
+	register RetType divisor = y < static_cast<RetType>(0) ? -y : y;
+
+	/**
+	 * Return values come in a struct of RetTypes.
+	 */
+
+	struct DivModPair<RetType> ret;
+
+	if (divisor == 0) {
+
+		/**
+		 * If the quotient will be negative, return -infty. Else return +infty.
+		 */
+
+		const bool useNegInfty = x < 0;
+		constexpr RetType retMax = std::numeric_limits<BiggerType>::max();
+		constexpr RetType retMin = -retMax - static_cast<RetType>(1);
+
+		/**
+		 * No remainder because infty doesn't have a remainder.
+		 */
+
+		ret.quotient = useNegInfty ? retMin : retMax;
+		ret.remainder = 0;
+
+		return ret;
 	}
 
-	return a - multiply(k, b);
+	/**
+	 * If the quotient is all remainder, just return the remainder with a quotient of 0.
+	 */
+
+	if (divisor > dividend) {
+		ret.quotient = 0;
+		ret.remainder = dividend;
+
+		return ret;
+	}
+
+	/**
+	 * If the quotient is exactly 1 in integer divisions (x == y) then return 1.
+	 */
+
+	if (divisor == dividend) {
+		ret.quotient = 1;
+		ret.remainder = 0;
+
+		return ret;
+	}
+
+	/**
+	 * Need to shift the dividend into the remainder to align MSBs.
+	 */
+
+	constexpr std::uint8_t retBits = sizeof(DivType) << 3;
+    constexpr std::uint8_t bitIndex = retBits - 1;
+	constexpr DivType highestBit = static_cast<DivType>(1) << bitIndex;
+
+	register DivType quotient = 0;
+	register DivType remainder = 0;
+	register DivType d = 0;
+	register DivType t = 0;
+
+	/**
+	 * Mask the bits of the dividend and push them into the remainder so that subtractions of the divisor
+	 * annihilate the dividend, leaving only the remainder. Only perform the subtractions up to where the
+	 * remainder starts.
+	 */
+
+	std::uint8_t numBits = retBits;
+	while (remainder < divisor) {
+
+		/**
+		 * Mask the bit and push it.
+		 */
+
+		const std::uint8_t bit = (dividend & highestBit) >> bitIndex;
+		remainder = (remainder << 1) | bit;
+
+		/**
+		 * Shift the dividend and move the pointer to the start of the remainder back.
+		 */
+
+		d = dividend;
+		dividend <<= 1;
+		numBits--;
+	}
+
+	/**
+	 * Loop always runs 1 time extra so we have to revert the changes.
+	 */
+
+	dividend = d;
+	remainder >>= 1;
+	numBits++;
+
+	/**
+	 * Shift and subtract routine to annihilate the dividend, leaving the appropriate remainder.
+	 */
+
+	for (std::uint8_t i = 0; i < numBits; i++) {
+
+		/**
+		 *
+		 */
+
+		const std::uint8_t bit = (dividend & highestBit) >> (retBits - 1);
+		remainder = (remainder << 1) | bit;
+
+		t = remainder - divisor;
+		const std::uint8_t tempQ = !((t & highestBit) >> (retBits - 1));
+		dividend <<= 1;
+		quotient = (quotient << 1) | tempQ;
+		if (tempQ) {
+			remainder = t;
+		}
+	}
+
+	/**
+	 * If either argument is negative then the quotient is negative. Adjust the modulo result too
+	 * because the signs matter.
+	 */
+
+	const bool neg = x < 0 != y < 0;
+	ret.quotient = neg ? -quotient : quotient;
+
+	/**
+	 * Change modulo result observing sign.
+	 */
+
+	if (x < 0 && y < 0) ret.remainder = -remainder;
+	if (x > 0 && y < 0) ret.remainder = remainder - divisor;
+	if (x < 0 && y > 0) ret.remainder = divisor - remainder;
+	if (x > 0 && y > 0) ret.remainder = remainder;
+
+	return ret;
 }
 
 template <class T>

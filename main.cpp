@@ -12,7 +12,7 @@ void foo(void) {
 		x++;
 
 		if (x >= 16384) {
-			Scheduler::sleep(20);
+//			Scheduler::sleep(1);
 			xold = x;
 			P1OUT ^= BIT0;
 		}
@@ -24,6 +24,7 @@ void bar(void) {
 		y++;
 
 		if (y >= 16384) {
+//			Scheduler::sleep(1);
 			yold = y;
 			P1OUT ^= BIT6;
 		}
@@ -37,7 +38,6 @@ void baz(void) {
 		if (z >= 16384) {
 			zold = z;
 			P1OUT &= ~(BIT0 | BIT6);
-			break;
 		}
 	}
 }
@@ -48,8 +48,8 @@ int main(void) {
 	x.addTask(foo);
 	x.addTask(bar, 0, 5);
 	x.addTask(baz, 0, 3);
-
-	Scheduler s(x, Scheduler::roundRobin);
+	volatile auto ret = divmod(-25, -3);
+	Scheduler s(x, Scheduler::lottery);
 	P1DIR = BIT0 | BIT6;
 	s.start((std::size_t) 16000000);
 	_low_power_mode_0();
