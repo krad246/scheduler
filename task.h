@@ -67,8 +67,8 @@ private:
 	std::size_t priority;
 
 	bool sleeping = false;
-	std::size_t sleepMicros = 0;
-	std::size_t sleepMillis = 0;
+	std::size_t duration = 0;
+	std::size_t timeStamp = 0;
 };
 
 

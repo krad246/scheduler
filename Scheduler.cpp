@@ -17,82 +17,75 @@ void Scheduler::lottery(void) {
 	 * Maintain an iterator that loops through and a count of how many tasks to go through.
 	 */
 
-	ListIterator<Task *> task = Scheduler::sched->queue.begin();
+	register ListIterator<Task *> task = Scheduler::sched->queue.begin();
 	const std::size_t sz = Scheduler::sched->queue.size();
 
 	/**
-	 * If idle() is the only runnable function at all, then we just return the idle hook.
+	 * Retrieve the 'pool of tickets' from the queue of tasks. Drop sleeping tasks from the pool.
 	 */
 
-	const std::size_t numSleeping = Scheduler::sched->numSleeping;
-	if (numSleeping == sz - 1) {
-		return;
+	std::size_t pool = Scheduler::sched->tickets;
+	for (std::size_t i = 0; i < sz - 1; ++i) {
+		if ((*task)->sleeping) pool -= (*task)->priority;
+		task++;
 	}
 
 	/**
-	 * Loop through the interval [0, pool) and see if the draw is in an interval
-	 * [X1, X2) where X2 - X1 = task.tickets.
+	 * If all tasks but the idle() hook are asleep, just assign that and leave.
 	 */
 
-	/**
-	 * Retrieve the 'pool of tickets' from the queue of tasks. We drop idle() by default.
-	 */
-
-	const std::size_t pool = Scheduler::sched->tickets - 1;
-
-	/**
-	 * Compute a random number for the lottery 'draw'.
-	 */
-
-	const std::size_t draw = rand<16>();
-
-	/**
-	 *  Map that into the range of tickets via modulo(). This is an approximation to the modulo function.
-	 */
-
-	const std::size_t map = multiply(draw, pool) >> (sizeof(std::size_t) << 3);
-
-	/**
-	 * Maintain the interval boundaries.
-	 */
-
-	std::size_t lowerTicketBound = 0;
-	std::size_t higherTicketBound = 0;
-
-	/**
-	 * Loop through the 'pool' of tickets by using the interval variables to create a 'slice'
-	 * corresponding to a task. If the random draw is within range, then this is the task that
-	 * will be picked.
-	 */
-
-	for (std::size_t i = 0; i < sz; ++i) {
+	if (pool == 1) {
+		task = Scheduler::sched->queue.end();
+	} else {
 
 		/**
-		 * If we see idle(), we skip it without counting its tickets at all, UNLESS the idle function is the only
-		 * task we can run at all.
+		 * Compute a random number for the lottery 'draw'.
 		 */
 
-		const std::uint16_t retAddress = (*task)->KernelStackPointer[15];
-		if (retAddress == (std::uint16_t) Task::idle) task++;
+		const std::size_t draw = rand<16>();
 
 		/**
-		 * Sleeping tasks are skipped entirely. This is for the cases where not all of the possible tasks are sleeping.
+		 *  Map that into the range of tickets via modulo(). This is an approximation to the modulo function.
 		 */
 
-		if ((*task)->sleeping) {
+		const std::size_t map = multiply(draw, pool) >> (sizeof(std::size_t) << 3);
+	//	const auto dmp = divmod(draw, pool);
+	//	const std::size_t map = dmp.remainder;
+
+		/**
+		 * Maintain the interval boundaries.
+		 */
+
+		std::size_t lowerTicketBound = 0;
+		std::size_t higherTicketBound = 0;
+
+		/**
+		 * Loop through the 'pool' of tickets by using the interval variables to create a 'slice'
+		 * corresponding to a task. If the random draw is within range, then this is the task that
+		 * will be picked.
+		 */
+		task = Scheduler::sched->queue.begin();
+		for (std::size_t i = 0; i < sz - 1; ++i) {
+
+			/**
+			 * Sleeping tasks are skipped entirely. This is for the cases where not all of the possible tasks are sleeping.
+			 */
+
+			if ((*task)->sleeping) {
+				task++;
+				continue;
+			}
+
+			/**
+			 * Otherwise, we iterate normally and perform the bounds checks as usual. When we are in
+			 * the right interval, we return the task that spans that cut.
+			 */
+
+			higherTicketBound += (*task)->priority;
+			if (lowerTicketBound <= map && map < higherTicketBound) break;
+			lowerTicketBound += (*task)->priority;
 			task++;
-			continue;
 		}
-
-		/**
-		 * Otherwise, we iterate normally and perform the bounds checks as usual. When we are in
-		 * the right interval, we return the task that spans that cut.
-		 */
-
-		higherTicketBound += (*task)->priority;
-		if (lowerTicketBound <= map && map < higherTicketBound) break;
-		lowerTicketBound += (*task)->priority;
-		task++;
 	}
 
 	/**
@@ -112,7 +105,7 @@ void Scheduler::roundRobin(void) {
 	 * Maintain an iterator that continually loops through.
 	 */
 
-	ListIterator<Task *> task = Scheduler::currProc;
+	register ListIterator<Task *> task = Scheduler::currProc;
 
 	/**
 	 * For weighted round robin scheduling, there needs to be a notion of the number of times
@@ -121,13 +114,47 @@ void Scheduler::roundRobin(void) {
 	 */
 
 	static std::size_t numTimesRun = 0;
-	const bool TaskRunEnoughTimes = (numTimesRun >= (*task)->priority);
+
+	/**
+	 * Check if the current task is an idle(). If it is the only runnable (all others are sleeping) then run it.
+	 * Otherwise skip it.
+	 */
+
+	const std::size_t retAddress = (*task)->KernelStackPointer[15];
+	if (retAddress == (std::uint16_t) Task::idle) {
+
+		/**
+		 * Regardless of whether or not we run idle(), reset the counter because we need to start fresh on a task.
+		 */
+
+		numTimesRun = 0;
+
+		/**
+		 * If N - 1 tasks (the other one is the idle hook) are asleep, then the idle hook is all we can run.
+		 * Otherwise, skip the idle hook.
+		 */
+
+		const std::size_t sz = Scheduler::sched->queue.size();
+		const std::size_t numSleeping = Scheduler::sched->numSleeping;
+		if (numSleeping != sz - 1) task++;
+		else {
+
+			/**
+			 * Leave with idle().
+			 */
+
+			numTimesRun++;
+			Scheduler::currProc = task;
+			return;
+		}
+	}
 
 	/**
 	 * If the current task has run enough times, reset the counter. In the event this happens, find a new task to run.
 	 * Check for the first task that is not sleeping and also is not the idle hook.
 	 */
 
+	const bool TaskRunEnoughTimes = (numTimesRun >= (*task)->priority);
 	if (TaskRunEnoughTimes) {
 
 		/**
@@ -147,24 +174,6 @@ void Scheduler::roundRobin(void) {
 		 */
 
 		while ((*task)->sleeping) task++;
-
-		/**
-		 * Grab the return address held in the kernel stack. If it is the idle hook,
-		 * increment the iterator to skip it unless all other tasks are sleeping.
-		 */
-
-		const std::size_t retAddress = (*task)->KernelStackPointer[15];
-		if (retAddress == (std::uint16_t) Task::idle) {
-
-			/**
-			 * If N - 1 tasks (the other one is the idle hook) are asleep, then the idle hook is all we can run.
-			 * Otherwise, skip the idle hook.
-			 */
-
-			const std::size_t sz = Scheduler::sched->queue.size();
-			const std::size_t numSleeping = Scheduler::sched->numSleeping;
-			if (numSleeping != sz - 1) task++;
-		}
 	}
 
 	/**
@@ -223,6 +232,30 @@ void Scheduler::start(std::size_t frequency) {
 	currProc = queue.begin();
 	SchedStackPointer = (std::uint16_t *) _get_SP_register();
 	SystemClock::StartSystemClock(frequency);
+}
+
+/**
+ * Sleep for the specified duration in milliseconds.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+void Scheduler::sleep(std::size_t millis) {
+
+	/**
+	 * Disable interrupts to avoid race conditions.
+	 */
+	_disable_interrupt();
+
+	/**
+	 * Update time stamp, then call the scheduler tick.
+	 */
+
+	(*Scheduler::currProc)->timeStamp = SystemClock::millis;
+	(*Scheduler::currProc)->duration = millis;
+	(*Scheduler::currProc)->sleeping = true;
+
+	Scheduler::sched->numSleeping++;
+	preempt();
 }
 
 /**
@@ -287,6 +320,7 @@ inline void Scheduler::jumpToNextTask(void) {
 
 #pragma FUNC_ALWAYS_INLINE
 inline void Scheduler::enterKernelMode(void) {
+	if ((*Scheduler::currProc)->sleeping) asm volatile(" 	push r2\n");
 	Scheduler::saveContext();
 	_set_SP_register((std::uint16_t) Scheduler::SchedStackPointer);
 }
@@ -311,10 +345,62 @@ inline void Scheduler::exitKernelMode(void) {
 
 #pragma FUNC_ALWAYS_INLINE
 inline void Scheduler::freeCompletedTasks(void) {
+
+	/**
+	 * If the task we just switched out of is done, we need to clean it up.
+	 */
+
 	if ((*Scheduler::currProc)->complete()) {
+
+		/**
+		 * Grab the task to be freed and move the process pointer so it doesn't become invalid.
+		 */
+
 		ListIterator<Task *> TaskToBeFreed = Scheduler::currProc;
 		Scheduler::currProc++;
+
+		/**
+		 * Drop the task to be freed and remove it from the ticket and sleep pools.
+		 */
+
 		Scheduler::sched->queue.pop(TaskToBeFreed);
+		Scheduler::sched->tickets--;
+		Scheduler::sched->numSleeping--;
+	}
+}
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::wakeSleepingTasks(void) {
+
+	/**
+	 * Loop over each task and check if it's sleeping. If it has slept long enough then 'unsleep' it.
+	 */
+
+	register ListIterator<Task *> TaskIterator = Scheduler::sched->queue.begin();
+	const std::size_t sz = Scheduler::sched->queue.size();
+	for (std::size_t i = 0; i < sz; i++) {
+
+		/**
+		 * Check sleep status.
+		 */
+
+		if ((*TaskIterator)->sleeping) {
+
+			/**
+			 * If it has slept long enough then remove it from the sleep queue.
+			 */
+
+			if (SystemClock::millis >= (*TaskIterator)->timeStamp + (*TaskIterator)->duration) {
+				(*TaskIterator)->sleeping = false;
+				Scheduler::sched->numSleeping--;
+			}
+		}
+
+		/**
+		 * Move to the next task.
+		 */
+
+		TaskIterator++;
 	}
 }
 
@@ -339,6 +425,7 @@ __attribute__((naked, interrupt)) void Scheduler::preempt(void) {
 
 	SystemClock::UpdateSystemTime();
 	Scheduler::freeCompletedTasks();
+	Scheduler::wakeSleepingTasks();
 
 	/**
 	 * Prep for the next function.

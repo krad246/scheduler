@@ -11,8 +11,8 @@
 #include <msp430.h>
 #include <type_traits>
 #include <Math.h>
-#include <Task.h>
 #include <SystemClock.h>
+#include <Task.h>
 
 /**
  * Forward declarations of other classes that work with the Scheduler class.
@@ -62,7 +62,7 @@ public:
 	 * Sleep function that tasks can call to be suspended for some specified amount of time.
 	 */
 
-	static void sleep(std::size_t micros);
+	static void sleep(std::size_t millis);
 
 private:
 
@@ -134,6 +134,12 @@ private:
 	 */
 
 	static void freeCompletedTasks(void);
+
+	/**
+	 * Wakes sleeping tasks.
+	 */
+
+	static void wakeSleepingTasks(void);
 
 	/**
 	 * Scheduler tick / preemption function.
