@@ -117,10 +117,22 @@ private:
 	static void restoreContext(void);
 
 	/**
+	 * Switches from user mode stack to kernel mode stack.
+	 */
+
+	static void switchStacks(void);
+
+	/**
 	 * Completes a task switch by loading the program counter with the address of the new task.
 	 */
 
 	static void jumpToNextTask(void);
+
+	/**
+	 * Setup to switch stacks on entry into a new task.
+	 */
+
+	static void enterTaskSetup(void);
 
 	/**
 	 * Wrapper functions that do a combination of all of the tasks above.
@@ -170,7 +182,7 @@ inline void Scheduler::sleep(std::size_t millis) {
 	(*Scheduler::currProc)->sleeping = true;
 
 	Scheduler::sched->numSleeping++;
-	preempt();
+	Scheduler::preempt();
 }
 
 #endif /* SCHEDULER_H_ */

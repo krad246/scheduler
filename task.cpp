@@ -18,7 +18,8 @@ Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(prior
 	 * nearest number of words greater or equal in size.
 	 */
 
-	const std::uint16_t NumWordsAllocated = stackSize > 0 ? 1 + (stackSize >> 1) : 0;
+	const std::uint16_t NumWordsAllocated = 2 + (stackSize > 0 ? 1 + (stackSize >> 1) : 0);
+//	const std::uint16_t NumWordsAllocated = (stackSize > 0 ? 1 + (stackSize >> 1) : 0);
 
 	/**
 	 * Kernel stack must be big enough to hold R0, R2, R4 - R15. The rest goes to the user stack.
@@ -31,6 +32,7 @@ Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(prior
 	 */
 
 	KernelStackPointer = Stack + NumWordsAllocated;
+	UserStackPointer = KernelStackPointer;
 
 	/**
 	 * We are simulating a stack on the heap, so the following layout is needed:
@@ -50,12 +52,13 @@ Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(prior
 	KernelStackPointer[14] = (std::uint16_t) Task::idle;
 	KernelStackPointer[13] = (std::uint16_t) f;
 	KernelStackPointer[12] = GIE;
+	KernelStackPointer[11] = (std::uint16_t) UserStackPointer;
 
 	/**
 	 * Set default register state.
 	 */
 
-	for (std::int16_t i = 11; i >= 0; i--) {
+	for (std::int16_t i = 10; i >= 0; i--) {
 		KernelStackPointer[i] = 0x0000;
 	}
 }

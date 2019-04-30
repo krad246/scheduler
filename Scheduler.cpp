@@ -232,9 +232,27 @@ Scheduler::Scheduler(TaskQueue& tasks, SchedulingMethod method) : queue(tasks) {
  */
 
 void Scheduler::start(std::size_t frequency) {
-	currProc = queue.begin();
-	SchedStackPointer = (std::uint16_t *) _get_SP_register();
+	Scheduler::currProc = queue.begin();
+	Scheduler::SchedStackPointer = (std::uint16_t *) _get_SP_register();
 	SystemClock::StartSystemClock(frequency);
+
+	/**
+	 * Ignore system tick interrupt for the first boot.
+	 */
+
+	_disable_interrupts();
+
+	/**
+	 * Queue up a function.
+	 */
+
+	Scheduler::sched->schedule();
+
+	/**
+	 * Jump to the next function.
+	 */
+
+	Scheduler::exitKernelMode();
 }
 
 /**
@@ -282,14 +300,47 @@ inline void Scheduler::restoreContext(void) {
 }
 
 /**
+ * Switches stacks from user to kernel stacks for subsequent code. Copies the pushed words on the user stack
+ * to the kernel stack.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::switchStacks(void) {
+	std::uint16_t *UserStackPointer = (std::uint16_t *) _get_SP_register();
+	(*Scheduler::currProc)->KernelStackPointer[12] = *UserStackPointer;
+	UserStackPointer++;
+	(*Scheduler::currProc)->KernelStackPointer[13] = *UserStackPointer;
+	UserStackPointer++;
+
+	asm volatile("   add.w #4, sp\n" \
+				 "   mov.w sp, r4\n");
+
+	(*Scheduler::currProc)->KernelStackPointer[11] = (std::uint16_t) UserStackPointer;
+
+	_set_SP_register((std::uint16_t) (12 + (*Scheduler::currProc)->KernelStackPointer));
+}
+
+/**
  * Loads the program counter and status register with the SR & address of the new task.
  */
 
 #pragma FUNC_ALWAYS_INLINE
 inline void Scheduler::jumpToNextTask(void) {
-	asm volatile (
-		" 	reti \n"
+	asm volatile ( \
+		" 	pop r2\n" \
+		" 	mov.w @sp, r5\n" \
+		"   mov.w r4, sp\n" \
+		"  	br r5\n" \
 	);
+}
+
+/**
+ * Setup to switch stacks on entry into a new task.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::enterTaskSetup(void) {
+	_set_SP_register((std::uint16_t) (*Scheduler::currProc)->UserStackPointer);
 }
 
 /**
@@ -299,6 +350,7 @@ inline void Scheduler::jumpToNextTask(void) {
 
 #pragma FUNC_ALWAYS_INLINE
 inline void Scheduler::enterKernelMode(void) {
+	Scheduler::switchStacks();
 
 	if ((*Scheduler::currProc)->sleeping) {
 		_enable_interrupt();
@@ -347,8 +399,8 @@ inline void Scheduler::freeCompletedTasks(void) {
 		 * Drop the task to be freed and remove it from the ticket and sleep pools.
 		 */
 
+		Scheduler::sched->tickets -= (*TaskToBeFreed)->priority;
 		Scheduler::sched->queue.pop(TaskToBeFreed);
-		Scheduler::sched->tickets--;
 		Scheduler::sched->numSleeping--;
 	}
 }
