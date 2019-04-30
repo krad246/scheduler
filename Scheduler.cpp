@@ -21,80 +21,71 @@ void Scheduler::lottery(void) {
 	const std::size_t sz = Scheduler::sched->queue.size();
 
 	/**
-	 * If idle() is the only runnable function at all, then we just return the idle hook.
+	 * Retrieve the 'pool of tickets' from the queue of tasks. Drop sleeping tasks from the pool.
 	 */
 
-	const std::size_t numSleeping = Scheduler::sched->numSleeping;
-	if (numSleeping == sz - 1) {
-		return;
+	std::size_t pool = Scheduler::sched->tickets;
+	for (std::size_t i = 0; i < sz - 1; ++i) {
+		if ((*task)->sleeping) pool -= (*task)->priority;
+		task++;
 	}
 
 	/**
-	 * Loop through the interval [0, pool) and see if the draw is in an interval
-	 * [X1, X2) where X2 - X1 = task.tickets.
+	 * If all tasks but the idle() hook are asleep, just assign that and leave.
 	 */
 
-	/**
-	 * Retrieve the 'pool of tickets' from the queue of tasks. We drop idle() by default.
-	 */
-
-	const std::size_t pool = Scheduler::sched->tickets - 1;
-
-	/**
-	 * Compute a random number for the lottery 'draw'.
-	 */
-
-	const std::size_t draw = rand<16>();
-
-	/**
-	 *  Map that into the range of tickets via modulo(). This is an approximation to the modulo function.
-	 */
-
-	const std::size_t map = multiply(draw, pool) >> (sizeof(std::size_t) << 3);
-//	const auto dmp = divmod(draw, pool);
-//	const std::size_t map = dmp.remainder;
-
-	/**
-	 * Maintain the interval boundaries.
-	 */
-
-	std::size_t lowerTicketBound = 0;
-	std::size_t higherTicketBound = 0;
-
-	/**
-	 * Loop through the 'pool' of tickets by using the interval variables to create a 'slice'
-	 * corresponding to a task. If the random draw is within range, then this is the task that
-	 * will be picked.
-	 */
-
-	for (std::size_t i = 0; i < sz; ++i) {
+	if (pool == 1) {
+		task = Scheduler::sched->queue.end();
+	} else {
 
 		/**
-		 * If we see idle(), we skip it without counting its tickets at all, UNLESS the idle function is the only
-		 * task we can run at all.
+		 * Compute a random number for the lottery 'draw'.
 		 */
 
-		const std::uint16_t retAddress = (*task)->KernelStackPointer[15];
-		if (retAddress == (std::uint16_t) Task::idle) task++;
+		const std::size_t draw = rand<16>();
 
 		/**
-		 * Sleeping tasks are skipped entirely. This is for the cases where not all of the possible tasks are sleeping.
+		 *  Map that into the range of tickets via modulo(). This is an approximation to the modulo function.
 		 */
 
-		if ((*task)->sleeping) {
+		const std::size_t map = multiply(draw, pool) >> (sizeof(std::size_t) << 3);
+	//	const auto dmp = divmod(draw, pool);
+	//	const std::size_t map = dmp.remainder;
+
+		/**
+		 * Maintain the interval boundaries.
+		 */
+
+		std::size_t lowerTicketBound = 0;
+		std::size_t higherTicketBound = 0;
+
+		/**
+		 * Loop through the 'pool' of tickets by using the interval variables to create a 'slice'
+		 * corresponding to a task. If the random draw is within range, then this is the task that
+		 * will be picked.
+		 */
+		task = Scheduler::sched->queue.begin();
+		for (std::size_t i = 0; i < sz - 1; ++i) {
+
+			/**
+			 * Sleeping tasks are skipped entirely. This is for the cases where not all of the possible tasks are sleeping.
+			 */
+
+			if ((*task)->sleeping) {
+				task++;
+				continue;
+			}
+
+			/**
+			 * Otherwise, we iterate normally and perform the bounds checks as usual. When we are in
+			 * the right interval, we return the task that spans that cut.
+			 */
+
+			higherTicketBound += (*task)->priority;
+			if (lowerTicketBound <= map && map < higherTicketBound) break;
+			lowerTicketBound += (*task)->priority;
 			task++;
-			continue;
 		}
-
-		/**
-		 * Otherwise, we iterate normally and perform the bounds checks as usual. When we are in
-		 * the right interval, we return the task that spans that cut.
-		 */
-
-		higherTicketBound += (*task)->priority;
-		if (lowerTicketBound <= map && map < higherTicketBound) break;
-		lowerTicketBound += (*task)->priority;
-		task++;
 	}
 
 	/**
@@ -235,6 +226,11 @@ void Scheduler::start(std::size_t frequency) {
 void Scheduler::sleep(std::size_t millis) {
 
 	/**
+	 * Disable interrupts to avoid race conditions.
+	 */
+	_disable_interrupt();
+
+	/**
 	 * Update time stamp, then call the scheduler tick.
 	 */
 
@@ -337,6 +333,7 @@ inline void Scheduler::freeCompletedTasks(void) {
 		ListIterator<Task *> TaskToBeFreed = Scheduler::currProc;
 		Scheduler::currProc++;
 		Scheduler::sched->queue.pop(TaskToBeFreed);
+		Scheduler::sched->tickets -= 1;
 	}
 }
 
@@ -352,6 +349,8 @@ inline void Scheduler::wakeSleepingTasks(void) {
 				Scheduler::sched->numSleeping--;
 			}
 		}
+
+		TaskIterator++;
 	}
 }
 

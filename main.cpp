@@ -9,12 +9,14 @@ static volatile std::uint32_t zold = 0;
 
 void foo(void) {
 	while (1) {
+		Scheduler::sleep(1);
 		x++;
 	}
 }
 
 void bar(void) {
 	while (1) {
+		Scheduler::sleep(1);
 		y++;
 
 	}
@@ -22,6 +24,7 @@ void bar(void) {
 
 void baz(void) {
 	while (1) {
+		Scheduler::sleep(1);
 		z++;
 	}
 }
@@ -30,9 +33,8 @@ int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
 	TaskQueue x;
 	x.addTask(foo);
-	x.addTask(bar, 0, 5);
-	x.addTask(baz, 0, 3);
-	volatile auto ret = divmod(-25, -3);
+	x.addTask(bar);
+	x.addTask(baz);
 	Scheduler s(x, Scheduler::lottery);
 	P1DIR = BIT0 | BIT6;
 	s.start((std::size_t) 16000000);
