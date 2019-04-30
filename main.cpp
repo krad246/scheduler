@@ -32,7 +32,7 @@ int main(void) {
 	x.addTask(foo, 0, 1);
 	x.addTask(bar, 0, 5);
 	x.addTask(baz, 0, 3);
-	Scheduler s(x, Scheduler::roundRobin);
+	Scheduler s(x, Scheduler::lottery);
 	P1DIR = BIT0 | BIT6;
 	s.start((std::size_t) 16000000);
 	_low_power_mode_0();

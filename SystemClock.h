@@ -46,10 +46,10 @@ private:
 	 * Timing variables for the system.
 	 */
 
-	static std::size_t microsPerTick;
-	static std::size_t micros;
-	static std::size_t fractionalMillis;
-	static std::size_t millis;
+	static volatile std::size_t microsPerTick;
+	static volatile std::size_t micros;
+	static volatile std::size_t fractionalMillis;
+	static volatile std::size_t millis;
 };
 
 /**

@@ -167,6 +167,7 @@ ListIterator<T>::ListIterator(ListNode<T> *ref) : node(ref) { }
  * Defines the ++x operator.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline ListIterator<T>& ListIterator<T>::operator++() {
 	node = node->next;
@@ -178,6 +179,7 @@ inline ListIterator<T>& ListIterator<T>::operator++() {
  * increment happens.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline ListIterator<T> ListIterator<T>::operator++(int) {
 	ListIterator<T> tmp = *this;
@@ -189,6 +191,7 @@ inline ListIterator<T> ListIterator<T>::operator++(int) {
  * Defines --x operator.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline ListIterator<T>& ListIterator<T>::operator--() {
 	node = node->prev;
@@ -199,6 +202,7 @@ inline ListIterator<T>& ListIterator<T>::operator--() {
  * Same deal as above.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline ListIterator<T> ListIterator<T>::operator--(int) {
 	ListIterator<T> tmp = *this;
@@ -210,6 +214,7 @@ inline ListIterator<T> ListIterator<T>::operator--(int) {
  * Retrieves the contents of the internal node and returns that.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline T& ListIterator<T>::operator*() {
 	return node->get();
@@ -219,6 +224,7 @@ inline T& ListIterator<T>::operator*() {
  * Retrieves the contents of the internal node and returns that.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline T* ListIterator<T>::operator->() {
 	return &node->get();
@@ -228,6 +234,7 @@ inline T* ListIterator<T>::operator->() {
  * Assignment operator copies the underlying pointer to the node.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline ListIterator<T>& ListIterator<T>::operator=(const ListIterator<T>& rhs) {
 	if (this == &rhs) return *this;
@@ -239,11 +246,13 @@ inline ListIterator<T>& ListIterator<T>::operator=(const ListIterator<T>& rhs) {
  * Equality comparators.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline bool ListIterator<T>::operator==(const ListIterator<T>& rhs) {
 	return node == rhs.node;
 }
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline bool ListIterator<T>::operator!=(const ListIterator<T>& rhs) {
 	return node != rhs.node;
@@ -372,6 +381,7 @@ List<T>::~List() {
  * Form an iterator from the head pointer and return it.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline ListIterator<T> List<T>::begin(void) {
 	ListIterator<T> HeadIterator =  ListIterator<T>(head);
@@ -382,6 +392,7 @@ inline ListIterator<T> List<T>::begin(void) {
  * Form an iterator from the tail pointer and return it.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline ListIterator<T> List<T>::end(void) {
 	ListIterator<T> TailIterator =  ListIterator<T>(tail);
@@ -591,6 +602,7 @@ void List<T>::clear(void) {
  * Returns the contents of the head node.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline T& List<T>::front(void) {
 	return head->get();
@@ -600,6 +612,7 @@ inline T& List<T>::front(void) {
  * Returns the contents of the tail node.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline T& List<T>::back(void) {
 	return tail->get();
@@ -653,6 +666,7 @@ ListIterator<T> List<T>::find(T& data) {
  * Returns size of list. Self explanatory.
  */
 
+#pragma FUNC_ALWAYS_INLINE
 template <class T>
 inline std::size_t List<T>::size(void) {
 	return count;

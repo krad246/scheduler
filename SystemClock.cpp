@@ -11,10 +11,10 @@
  * Default initializations for the system time.
  */
 
-std::size_t SystemClock::microsPerTick = 0;
-std::size_t SystemClock::micros = 0;
-std::size_t SystemClock::fractionalMillis = 0;
-std::size_t SystemClock::millis = 0;
+volatile std::size_t SystemClock::microsPerTick = 0;
+volatile std::size_t SystemClock::micros = 0;
+volatile std::size_t SystemClock::fractionalMillis = 0;
+volatile std::size_t SystemClock::millis = 0;
 
 /**
  * Start the system timer up with the clock module running at some specified frequency.
