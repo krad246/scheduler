@@ -21,13 +21,16 @@ void Scheduler::lottery(void) {
 	const std::size_t sz = Scheduler::sched->queue.size();
 
 	/**
-	 * Retrieve the 'pool of tickets' from the queue of tasks. Drop sleeping tasks from the pool.
+	 * Retrieve the 'pool of tickets' from the queue of tasks. Drop sleeping tasks from the pool if there are any.
 	 */
 
+	const std::size_t numSleeping = Scheduler::sched->numSleeping;
 	std::size_t pool = Scheduler::sched->tickets;
-	for (std::size_t i = 0; i < sz - 1; ++i) {
-		if ((*task)->sleeping) pool -= (*task)->priority;
-		task++;
+	if (numSleeping > 0) {
+		for (std::size_t i = 0; i < sz - 1; ++i) {
+			if ((*task)->sleeping) pool -= (*task)->priority;
+			task++;
+		}
 	}
 
 	/**
@@ -48,9 +51,9 @@ void Scheduler::lottery(void) {
 		 *  Map that into the range of tickets via modulo(). This is an approximation to the modulo function.
 		 */
 
-		const std::size_t map = multiply(draw, pool) >> (sizeof(std::size_t) << 3);
-	//	const auto dmp = divmod(draw, pool);
-	//	const std::size_t map = dmp.remainder;
+//		const std::size_t map = multiply(draw, pool) >> (sizeof(std::size_t) << 3);
+		const auto dmp = divmod(draw, pool);
+		const std::size_t map = dmp.remainder;
 
 		/**
 		 * Maintain the interval boundaries.
@@ -64,6 +67,7 @@ void Scheduler::lottery(void) {
 		 * corresponding to a task. If the random draw is within range, then this is the task that
 		 * will be picked.
 		 */
+
 		task = Scheduler::sched->queue.begin();
 		for (std::size_t i = 0; i < sz - 1; ++i) {
 
@@ -244,6 +248,7 @@ void Scheduler::sleep(std::size_t millis) {
 	/**
 	 * Disable interrupts to avoid race conditions.
 	 */
+
 	_disable_interrupt();
 
 	/**
@@ -373,34 +378,42 @@ inline void Scheduler::freeCompletedTasks(void) {
 inline void Scheduler::wakeSleepingTasks(void) {
 
 	/**
-	 * Loop over each task and check if it's sleeping. If it has slept long enough then 'unsleep' it.
+	 * Wakes sleeping tasks if there are any to wake up.
 	 */
 
-	register ListIterator<Task *> TaskIterator = Scheduler::sched->queue.begin();
-	const std::size_t sz = Scheduler::sched->queue.size();
-	for (std::size_t i = 0; i < sz; i++) {
+	if (Scheduler::sched->numSleeping > 0) {
 
 		/**
-		 * Check sleep status.
+		 * Loop over each task and check if it's sleeping. If it has slept long enough then 'unsleep' it.
 		 */
 
-		if ((*TaskIterator)->sleeping) {
+		register ListIterator<Task *> TaskIterator = Scheduler::sched->queue.begin();
+		const std::size_t sz = Scheduler::sched->queue.size();
+
+		const bool timeUp = SystemClock::millis >= (*TaskIterator)->timeStamp + (*TaskIterator)->duration;
+
+		for (std::size_t i = 0; i < sz; i++) {
 
 			/**
-			 * If it has slept long enough then remove it from the sleep queue.
+			 * Check sleep status.
 			 */
 
-			if (SystemClock::millis >= (*TaskIterator)->timeStamp + (*TaskIterator)->duration) {
+			if ((*TaskIterator)->sleeping && timeUp) {
+
+				/**
+				 * If it has slept long enough then remove it from the sleep queue.
+				 */
+
 				(*TaskIterator)->sleeping = false;
 				Scheduler::sched->numSleeping--;
 			}
+
+			/**
+			 * Move to the next task.
+			 */
+
+			TaskIterator++;
 		}
-
-		/**
-		 * Move to the next task.
-		 */
-
-		TaskIterator++;
 	}
 }
 

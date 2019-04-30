@@ -188,8 +188,9 @@ inline auto divmod(T1 x, T2 y) {
 	 * Convert arguments to unsigned for unsigned shift-and-subtract division routine.
 	 */
 
-	register RetType dividend = x < static_cast<RetType>(0) ? -x : x;
-	register RetType divisor = y < static_cast<RetType>(0) ? -y : y;
+	constexpr bool useSign = std::is_signed<RetType>::value;
+	register RetType dividend = useSign && x < static_cast<RetType>(0) ? -x : x;
+	register RetType divisor = useSign && y < static_cast<RetType>(0) ? -y : y;
 
 	/**
 	 * Return values come in a struct of RetTypes.
@@ -203,7 +204,7 @@ inline auto divmod(T1 x, T2 y) {
 		 * If the quotient will be negative, return -infty. Else return +infty.
 		 */
 
-		const bool useNegInfty = x < 0;
+		const bool useNegInfty = useSign && x < 0;
 		constexpr RetType retMax = std::numeric_limits<BiggerType>::max();
 		constexpr RetType retMin = -retMax - static_cast<RetType>(1);
 
@@ -307,22 +308,23 @@ inline auto divmod(T1 x, T2 y) {
 		}
 	}
 
+	ret.remainder = remainder;
+
 	/**
 	 * If either argument is negative then the quotient is negative. Adjust the modulo result too
 	 * because the signs matter.
 	 */
 
-	const bool neg = x < 0 != y < 0;
+	const bool neg = useSign && (x < 0 != y < 0);
 	ret.quotient = neg ? -quotient : quotient;
 
 	/**
 	 * Change modulo result observing sign.
 	 */
 
-	if (x < 0 && y < 0) ret.remainder = -remainder;
-	if (x > 0 && y < 0) ret.remainder = remainder - divisor;
-	if (x < 0 && y > 0) ret.remainder = divisor - remainder;
-	if (x > 0 && y > 0) ret.remainder = remainder;
+	if (useSign && x < 0 && y < 0) ret.remainder = -remainder;
+	if (useSign && x > 0 && y < 0) ret.remainder = remainder - divisor;
+	if (useSign && x < 0 && y > 0) ret.remainder = divisor - remainder;
 
 	return ret;
 }
