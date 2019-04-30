@@ -17,7 +17,7 @@ void Scheduler::lottery(void) {
 	 * Maintain an iterator that loops through and a count of how many tasks to go through.
 	 */
 
-	ListIterator<Task *> task = Scheduler::sched->queue.begin();
+	register ListIterator<Task *> task = Scheduler::sched->queue.begin();
 	const std::size_t sz = Scheduler::sched->queue.size();
 
 	/**
@@ -105,7 +105,7 @@ void Scheduler::roundRobin(void) {
 	 * Maintain an iterator that continually loops through.
 	 */
 
-	ListIterator<Task *> task = Scheduler::currProc;
+	register ListIterator<Task *> task = Scheduler::currProc;
 
 	/**
 	 * For weighted round robin scheduling, there needs to be a notion of the number of times
@@ -114,13 +114,47 @@ void Scheduler::roundRobin(void) {
 	 */
 
 	static std::size_t numTimesRun = 0;
-	const bool TaskRunEnoughTimes = (numTimesRun >= (*task)->priority);
+
+	/**
+	 * Check if the current task is an idle(). If it is the only runnable (all others are sleeping) then run it.
+	 * Otherwise skip it.
+	 */
+
+	const std::size_t retAddress = (*task)->KernelStackPointer[15];
+	if (retAddress == (std::uint16_t) Task::idle) {
+
+		/**
+		 * Regardless of whether or not we run idle(), reset the counter because we need to start fresh on a task.
+		 */
+
+		numTimesRun = 0;
+
+		/**
+		 * If N - 1 tasks (the other one is the idle hook) are asleep, then the idle hook is all we can run.
+		 * Otherwise, skip the idle hook.
+		 */
+
+		const std::size_t sz = Scheduler::sched->queue.size();
+		const std::size_t numSleeping = Scheduler::sched->numSleeping;
+		if (numSleeping != sz - 1) task++;
+		else {
+
+			/**
+			 * Leave with idle().
+			 */
+
+			numTimesRun++;
+			Scheduler::currProc = task;
+			return;
+		}
+	}
 
 	/**
 	 * If the current task has run enough times, reset the counter. In the event this happens, find a new task to run.
 	 * Check for the first task that is not sleeping and also is not the idle hook.
 	 */
 
+	const bool TaskRunEnoughTimes = (numTimesRun >= (*task)->priority);
 	if (TaskRunEnoughTimes) {
 
 		/**
@@ -140,24 +174,6 @@ void Scheduler::roundRobin(void) {
 		 */
 
 		while ((*task)->sleeping) task++;
-
-		/**
-		 * Grab the return address held in the kernel stack. If it is the idle hook,
-		 * increment the iterator to skip it unless all other tasks are sleeping.
-		 */
-
-		const std::size_t retAddress = (*task)->KernelStackPointer[15];
-		if (retAddress == (std::uint16_t) Task::idle) {
-
-			/**
-			 * If N - 1 tasks (the other one is the idle hook) are asleep, then the idle hook is all we can run.
-			 * Otherwise, skip the idle hook.
-			 */
-
-			const std::size_t sz = Scheduler::sched->queue.size();
-			const std::size_t numSleeping = Scheduler::sched->numSleeping;
-			if (numSleeping != sz - 1) task++;
-		}
 	}
 
 	/**
@@ -339,7 +355,7 @@ inline void Scheduler::freeCompletedTasks(void) {
 
 #pragma FUNC_ALWAYS_INLINE
 inline void Scheduler::wakeSleepingTasks(void) {
-	ListIterator<Task *> TaskIterator = Scheduler::sched->queue.begin();
+	register ListIterator<Task *> TaskIterator = Scheduler::sched->queue.begin();
 	const std::size_t sz = Scheduler::sched->queue.size();
 
 	for (std::size_t i = 0; i < sz; i++) {
