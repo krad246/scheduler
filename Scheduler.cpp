@@ -345,26 +345,60 @@ inline void Scheduler::exitKernelMode(void) {
 
 #pragma FUNC_ALWAYS_INLINE
 inline void Scheduler::freeCompletedTasks(void) {
+
+	/**
+	 * If the task we just switched out of is done, we need to clean it up.
+	 */
+
 	if ((*Scheduler::currProc)->complete()) {
+
+		/**
+		 * Grab the task to be freed and move the process pointer so it doesn't become invalid.
+		 */
+
 		ListIterator<Task *> TaskToBeFreed = Scheduler::currProc;
 		Scheduler::currProc++;
+
+		/**
+		 * Drop the task to be freed and remove it from the ticket and sleep pools.
+		 */
+
 		Scheduler::sched->queue.pop(TaskToBeFreed);
-		Scheduler::sched->tickets -= 1;
+		Scheduler::sched->tickets--;
+		Scheduler::sched->numSleeping--;
 	}
 }
 
 #pragma FUNC_ALWAYS_INLINE
 inline void Scheduler::wakeSleepingTasks(void) {
+
+	/**
+	 * Loop over each task and check if it's sleeping. If it has slept long enough then 'unsleep' it.
+	 */
+
 	register ListIterator<Task *> TaskIterator = Scheduler::sched->queue.begin();
 	const std::size_t sz = Scheduler::sched->queue.size();
-
 	for (std::size_t i = 0; i < sz; i++) {
+
+		/**
+		 * Check sleep status.
+		 */
+
 		if ((*TaskIterator)->sleeping) {
+
+			/**
+			 * If it has slept long enough then remove it from the sleep queue.
+			 */
+
 			if (SystemClock::millis >= (*TaskIterator)->timeStamp + (*TaskIterator)->duration) {
 				(*TaskIterator)->sleeping = false;
 				Scheduler::sched->numSleeping--;
 			}
 		}
+
+		/**
+		 * Move to the next task.
+		 */
 
 		TaskIterator++;
 	}

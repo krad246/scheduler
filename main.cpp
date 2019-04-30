@@ -24,8 +24,9 @@ void bar(void) {
 
 void baz(void) {
 	while (1) {
-		Scheduler::sleep(1);
 		z++;
+
+		if (z >= 13000) break;
 	}
 }
 
