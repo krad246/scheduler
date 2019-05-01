@@ -97,8 +97,8 @@ private:
 	 * System state including number of tasks sleeping and, if the lottery scheduler is enabled, ticket count.
 	 */
 
-	std::size_t numSleeping = 0;
-	std::size_t tickets = 0;
+	volatile std::size_t numSleeping = 0;
+	volatile std::size_t tickets = 0;
 
 	/**
 	 * Functions that have to run every time a context switch has to happen.
@@ -117,10 +117,22 @@ private:
 	static void restoreContext(void);
 
 	/**
+	 * Switches from user mode stack to kernel mode stack.
+	 */
+
+	static void switchStacks(void);
+
+	/**
 	 * Completes a task switch by loading the program counter with the address of the new task.
 	 */
 
 	static void jumpToNextTask(void);
+
+	/**
+	 * Setup to switch stacks on entry into a new task.
+	 */
+
+	static void enterTaskSetup(void);
 
 	/**
 	 * Wrapper functions that do a combination of all of the tasks above.
@@ -147,5 +159,30 @@ private:
 
 	static interrupt void preempt(void);
 };
+
+/**
+ * Sleep for the specified duration in milliseconds.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::sleep(std::size_t millis) {
+
+	/**
+	 * Disable interrupts to avoid race conditions.
+	 */
+
+	_disable_interrupts();
+
+	/**
+	 * Update time stamp, then call the scheduler tick.
+	 */
+
+	(*Scheduler::currProc)->timeStamp = SystemClock::millis;
+	(*Scheduler::currProc)->duration = millis;
+	(*Scheduler::currProc)->sleeping = true;
+
+	Scheduler::sched->numSleeping++;
+	Scheduler::preempt();
+}
 
 #endif /* SCHEDULER_H_ */

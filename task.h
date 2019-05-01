@@ -40,17 +40,15 @@ public:
 	~Task();
 
 	/**
-	 * If a function completes, then the system will return and pop an additional word off the stack.
-	 * When re-entering the function, the status register will overwrite the return address.
-	 * Since the status register is 1 byte large, it occupies the lower byte of the word.
-	 * Then we know that iff the word is fully contained in a byte then it must be the SR.
-	 * So we test if the higher byte is fully zeroed out, as it must be.
+	 * Checks if a task is complete.
 	 */
 
-	inline bool complete(void) {
-		const std::uint16_t statusWord = KernelStackPointer[13];
-		return (statusWord & 0xFF00) == 0x00;
-	}
+	bool complete(void);
+
+	/**
+	 * Checks if a task is the idle() hook.
+	 */
+	bool isIdle(void);
 
 	/**
 	 * Idle task hook.
@@ -62,6 +60,7 @@ private:
 	friend class Scheduler;
 
 	std::uint16_t *Stack;
+	std::uint16_t *UserStackPointer;
 	std::uint16_t *KernelStackPointer;
 
 	std::size_t priority;
@@ -71,11 +70,38 @@ private:
 	std::size_t timeStamp = 0;
 };
 
+/**
+ * If a function completes, then the system will return and pop an additional word off the stack.
+ * When re-entering the function, the status register will overwrite the return address.
+ * Since the status register is 1 byte large, it occupies the lower byte of the word.
+ * Then we know that iff the word is fully contained in a byte then it must be the SR.
+ * So we test if the higher byte is fully zeroed out, as it must be.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline bool Task::complete(void) {
+	const std::uint16_t statusWord = KernelStackPointer[13];
+	return (statusWord & 0xFF00) == 0x00;
+}
+
+/**
+ * We check if the return address of the function held in the kernel stack is the same as that of the idle task.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline bool Task::isIdle(void) {
+	const std::uint16_t retAddress = KernelStackPointer[15];
+	return (retAddress == (std::uint16_t) Task::idle);
+}
 
 /**
  * Linked list of tasks for dynamic and controlled growth / shrinkage.
  * Contains pointers to the heap-allocated tasks to prevent scoping issues.
  */
+
+class TaskIterator : ListIterator<Task *> {
+
+};
 
 class TaskQueue : List<Task *> {
 public:
@@ -89,6 +115,7 @@ public:
 
 private:
 	friend class Scheduler;
+	friend class TaskIterator;
 
 };
 

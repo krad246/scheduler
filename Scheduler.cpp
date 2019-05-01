@@ -21,13 +21,16 @@ void Scheduler::lottery(void) {
 	const std::size_t sz = Scheduler::sched->queue.size();
 
 	/**
-	 * Retrieve the 'pool of tickets' from the queue of tasks. Drop sleeping tasks from the pool.
+	 * Retrieve the 'pool of tickets' from the queue of tasks. Drop sleeping tasks from the pool if there are any.
 	 */
 
+	const std::size_t numSleeping = Scheduler::sched->numSleeping;
 	std::size_t pool = Scheduler::sched->tickets;
-	for (std::size_t i = 0; i < sz - 1; ++i) {
-		if ((*task)->sleeping) pool -= (*task)->priority;
-		task++;
+	if (numSleeping > 0) {
+		for (std::size_t i = 0; i < sz - 1; ++i) {
+			if ((*task)->sleeping) pool -= (*task)->priority;
+			task++;
+		}
 	}
 
 	/**
@@ -49,8 +52,8 @@ void Scheduler::lottery(void) {
 		 */
 
 		const std::size_t map = multiply(draw, pool) >> (sizeof(std::size_t) << 3);
-	//	const auto dmp = divmod(draw, pool);
-	//	const std::size_t map = dmp.remainder;
+//		const auto dmp = divmod(draw, pool);
+//		const std::size_t map = dmp.remainder;
 
 		/**
 		 * Maintain the interval boundaries.
@@ -64,6 +67,7 @@ void Scheduler::lottery(void) {
 		 * corresponding to a task. If the random draw is within range, then this is the task that
 		 * will be picked.
 		 */
+
 		task = Scheduler::sched->queue.begin();
 		for (std::size_t i = 0; i < sz - 1; ++i) {
 
@@ -120,8 +124,7 @@ void Scheduler::roundRobin(void) {
 	 * Otherwise skip it.
 	 */
 
-	const std::size_t retAddress = (*task)->KernelStackPointer[15];
-	if (retAddress == (std::uint16_t) Task::idle) {
+	if ((*task)->isIdle()) {
 
 		/**
 		 * Regardless of whether or not we run idle(), reset the counter because we need to start fresh on a task.
@@ -136,7 +139,7 @@ void Scheduler::roundRobin(void) {
 
 		const std::size_t sz = Scheduler::sched->queue.size();
 		const std::size_t numSleeping = Scheduler::sched->numSleeping;
-		if (numSleeping != sz - 1) task++;
+		if (numSleeping < sz - 1) task++;
 		else {
 
 			/**
@@ -229,33 +232,27 @@ Scheduler::Scheduler(TaskQueue& tasks, SchedulingMethod method) : queue(tasks) {
  */
 
 void Scheduler::start(std::size_t frequency) {
-	currProc = queue.begin();
-	SchedStackPointer = (std::uint16_t *) _get_SP_register();
+	Scheduler::currProc = queue.begin();
+	Scheduler::SchedStackPointer = (std::uint16_t *) _get_SP_register();
 	SystemClock::StartSystemClock(frequency);
-}
-
-/**
- * Sleep for the specified duration in milliseconds.
- */
-
-#pragma FUNC_ALWAYS_INLINE
-void Scheduler::sleep(std::size_t millis) {
 
 	/**
-	 * Disable interrupts to avoid race conditions.
+	 * Ignore system tick interrupt for the first boot.
 	 */
-	_disable_interrupt();
+
+	_disable_interrupts();
 
 	/**
-	 * Update time stamp, then call the scheduler tick.
+	 * Queue up a function.
 	 */
 
-	(*Scheduler::currProc)->timeStamp = SystemClock::millis;
-	(*Scheduler::currProc)->duration = millis;
-	(*Scheduler::currProc)->sleeping = true;
+	Scheduler::sched->schedule();
 
-	Scheduler::sched->numSleeping++;
-	preempt();
+	/**
+	 * Jump to the next function.
+	 */
+
+	Scheduler::exitKernelMode();
 }
 
 /**
@@ -303,14 +300,47 @@ inline void Scheduler::restoreContext(void) {
 }
 
 /**
+ * Switches stacks from user to kernel stacks for subsequent code. Copies the pushed words on the user stack
+ * to the kernel stack.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::switchStacks(void) {
+	std::uint16_t *UserStackPointer = (std::uint16_t *) _get_SP_register();
+	(*Scheduler::currProc)->KernelStackPointer[12] = *UserStackPointer;
+	UserStackPointer++;
+	(*Scheduler::currProc)->KernelStackPointer[13] = *UserStackPointer;
+	UserStackPointer++;
+
+	asm volatile("   add.w #4, sp\n" \
+				 "   mov.w sp, r4\n");
+
+	(*Scheduler::currProc)->KernelStackPointer[11] = (std::uint16_t) UserStackPointer;
+
+	_set_SP_register((std::uint16_t) (12 + (*Scheduler::currProc)->KernelStackPointer));
+}
+
+/**
  * Loads the program counter and status register with the SR & address of the new task.
  */
 
 #pragma FUNC_ALWAYS_INLINE
 inline void Scheduler::jumpToNextTask(void) {
-	asm volatile (
-		" 	reti \n"
+	asm volatile ( \
+		" 	pop r2\n" \
+		" 	mov.w @sp, r5\n" \
+		"   mov.w r4, sp\n" \
+		"  	br r5\n" \
 	);
+}
+
+/**
+ * Setup to switch stacks on entry into a new task.
+ */
+
+#pragma FUNC_ALWAYS_INLINE
+inline void Scheduler::enterTaskSetup(void) {
+	_set_SP_register((std::uint16_t) (*Scheduler::currProc)->UserStackPointer);
 }
 
 /**
@@ -320,7 +350,13 @@ inline void Scheduler::jumpToNextTask(void) {
 
 #pragma FUNC_ALWAYS_INLINE
 inline void Scheduler::enterKernelMode(void) {
-	if ((*Scheduler::currProc)->sleeping) asm volatile(" 	push r2\n");
+	Scheduler::switchStacks();
+
+	if ((*Scheduler::currProc)->sleeping) {
+		_enable_interrupt();
+		asm volatile(" 	push r2\n");
+	}
+
 	Scheduler::saveContext();
 	_set_SP_register((std::uint16_t) Scheduler::SchedStackPointer);
 }
@@ -363,8 +399,8 @@ inline void Scheduler::freeCompletedTasks(void) {
 		 * Drop the task to be freed and remove it from the ticket and sleep pools.
 		 */
 
+		Scheduler::sched->tickets -= (*TaskToBeFreed)->priority;
 		Scheduler::sched->queue.pop(TaskToBeFreed);
-		Scheduler::sched->tickets--;
 		Scheduler::sched->numSleeping--;
 	}
 }
@@ -373,34 +409,46 @@ inline void Scheduler::freeCompletedTasks(void) {
 inline void Scheduler::wakeSleepingTasks(void) {
 
 	/**
-	 * Loop over each task and check if it's sleeping. If it has slept long enough then 'unsleep' it.
+	 * Wakes sleeping tasks if there are any to wake up.
 	 */
 
-	register ListIterator<Task *> TaskIterator = Scheduler::sched->queue.begin();
-	const std::size_t sz = Scheduler::sched->queue.size();
-	for (std::size_t i = 0; i < sz; i++) {
+	if (Scheduler::sched->numSleeping > 0) {
 
 		/**
-		 * Check sleep status.
+		 * Loop over each task and check if it's sleeping. If it has slept long enough then 'unsleep' it.
 		 */
 
-		if ((*TaskIterator)->sleeping) {
+		register ListIterator<Task *> TaskIterator = Scheduler::sched->queue.begin();
+		const std::size_t sz = Scheduler::sched->queue.size();
+
+		for (std::size_t i = 0; i < sz; i++) {
 
 			/**
-			 * If it has slept long enough then remove it from the sleep queue.
+			 * Check if task has slept long enough.
 			 */
 
-			if (SystemClock::millis >= (*TaskIterator)->timeStamp + (*TaskIterator)->duration) {
+			const volatile bool timeUp = SystemClock::millis >= (*TaskIterator)->timeStamp + (*TaskIterator)->duration;
+
+			/**
+			 * Check sleep status.
+			 */
+
+			if ((*TaskIterator)->sleeping && timeUp) {
+
+				/**
+				 * If it has slept long enough then remove it from the sleep queue.
+				 */
+
 				(*TaskIterator)->sleeping = false;
 				Scheduler::sched->numSleeping--;
 			}
+
+			/**
+			 * Move to the next task.
+			 */
+
+			TaskIterator++;
 		}
-
-		/**
-		 * Move to the next task.
-		 */
-
-		TaskIterator++;
 	}
 }
 
