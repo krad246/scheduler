@@ -10,15 +10,6 @@ GEN_OPTS__FLAG :=
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
-<<<<<<< HEAD
-"./Scheduler.obj" \
-"./SystemClock.obj" \
-"./Task.obj" \
-"./main.obj" \
-"../lnk_msp430g2553.cmd" \
-$(GEN_CMDS__FLAG) \
--llibc.a \
-=======
 "./main.obj" \
 "./scheduler.obj" \
 "./task.obj" \
@@ -26,7 +17,6 @@ $(GEN_CMDS__FLAG) \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
 -llibmath.a \
->>>>>>> master
 
 -include ../makefile.init
 
@@ -133,18 +123,6 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXE_OUTPUTS += \
-<<<<<<< HEAD
-sched.out \
-
-EXE_OUTPUTS__QUOTED += \
-"sched.out" \
-
-BIN_OUTPUTS += \
-sched.hex \
-
-BIN_OUTPUTS__QUOTED += \
-"sched.hex" \
-=======
 scheduler_refactor.out \
 
 EXE_OUTPUTS__QUOTED += \
@@ -155,34 +133,17 @@ scheduler_refactor.hex \
 
 BIN_OUTPUTS__QUOTED += \
 "scheduler_refactor.hex" \
->>>>>>> master
 
 
 # All Target
 all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
-<<<<<<< HEAD
-	@$(MAKE) --no-print-directory -Onone "sched.out"
-
-# Tool invocations
-sched.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
-	@echo 'Building target: "$@"'
-	@echo 'Invoking: MSP430 Linker'
-	"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/bin/cl430" -vmsp -O4 --opt_for_speed=5 --use_hw_mpy=none --advice:power="all" --define=__MSP430G2553__ -g --cpp_default --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"sched.map" --heap_size=376 --stack_size=80 -i"C:/ti/ccsv8/ccs_base/msp430/include" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/lib" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="sched_linkInfo.xml" --use_hw_mpy=none --rom_model -o "sched.out" $(ORDERED_OBJS)
-	@echo 'Finished building target: "$@"'
-	@echo ' '
-
-sched.hex: $(EXE_OUTPUTS)
-	@echo 'Building files: $(strip $(EXE_OUTPUTS__QUOTED))'
-	@echo 'Invoking: MSP430 Hex Utility'
-	"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/bin/hex430" --memwidth=8 --romwidth=8 -o "sched.hex" $(EXE_OUTPUTS__QUOTED)
-=======
 	@$(MAKE) --no-print-directory -Onone "scheduler_refactor.out"
 
 # Tool invocations
 scheduler_refactor.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: MSP430 Linker'
-	"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/bin/cl430" -vmspx --data_model=restricted -O1 --use_hw_mpy=F5 --advice:power=all --define=__MSP430F5529__ -g --cpp_default --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --silicon_errata=CPU21 --silicon_errata=CPU22 --silicon_errata=CPU23 --silicon_errata=CPU40 -z -m"scheduler_refactor.map" --heap_size=1000 --stack_size=160 --cinit_hold_wdt=on -i"C:/ti/ccsv8/ccs_base/msp430/include" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/lib" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include" -i"C:/ti/ccsv8/ccs_base/msp430/lib/5xx_6xx_FRxx" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="scheduler_refactor_linkInfo.xml" --use_hw_mpy=F5 --rom_model -o "scheduler_refactor.out" $(ORDERED_OBJS)
+	"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/bin/cl430" -vmspx --data_model=restricted -O1 --opt_for_speed=5 --use_hw_mpy=F5 --advice:power="all" --define=__MSP430F5529__ -g --cpp_default --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --silicon_errata=CPU21 --silicon_errata=CPU22 --silicon_errata=CPU23 --silicon_errata=CPU40 -z -m"scheduler_refactor.map" --heap_size=720 --stack_size=80 --cinit_hold_wdt=on -i"C:/ti/ccsv8/ccs_base/msp430/include" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/lib" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include" -i"C:/ti/ccsv8/ccs_base/msp430/lib/5xx_6xx_FRxx" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="scheduler_refactor_linkInfo.xml" --use_hw_mpy=F5 --rom_model -o "scheduler_refactor.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
@@ -190,20 +151,14 @@ scheduler_refactor.hex: $(EXE_OUTPUTS)
 	@echo 'Building files: $(strip $(EXE_OUTPUTS__QUOTED))'
 	@echo 'Invoking: MSP430 Hex Utility'
 	"C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/bin/hex430" --memwidth=8 --romwidth=8 -o "scheduler_refactor.hex" $(EXE_OUTPUTS__QUOTED)
->>>>>>> master
 	@echo 'Finished building: $(strip $(EXE_OUTPUTS__QUOTED))'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-<<<<<<< HEAD
-	-$(RM) "Scheduler.obj" "SystemClock.obj" "Task.obj" "main.obj" 
-	-$(RM) "Scheduler.d" "SystemClock.d" "Task.d" "main.d" 
-=======
 	-$(RM) "main.obj" "scheduler.obj" "task.obj" 
 	-$(RM) "main.d" "scheduler.d" "task.d" 
->>>>>>> master
 	-@echo 'Finished clean'
 	-@echo ' '
 

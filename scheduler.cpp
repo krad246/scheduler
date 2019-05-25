@@ -162,7 +162,7 @@ __attribute__((naked, interrupt)) void schedulerBase::preempt(void) {
 	#if defined(__USEMSP430X__)
 		_set_SP_register(reinterpret_cast<std::uint32_t>(nextTask.trapframe));
 	#else
-		set_SP_register(reinterpret_cast<std::uint16_t>(nextTask.trapframe));
+		_set_SP_register(reinterpret_cast<std::uint16_t>(nextTask.trapframe));
 	#endif
 
 	sys::restoreContext();
