@@ -67,19 +67,65 @@ const taskBase schedulerBase::roundRobin(void) {
 	return schedulerBase::taskList[0];
 }
 
-std::uint32_t lfsr113_Bits (void)
-{
-   static std::uint32_t z1 = 12345, z2 = 12345, z3 = 12345, z4 = 12345;
-   unsigned int b;
-   b  = ((z1 << 6) ^ z1) >> 13;
-   z1 = ((z1 & 4294967294U) << 18) ^ b;
-   b  = ((z2 << 2) ^ z2) >> 27;
-   z2 = ((z2 & 4294967288U) << 2) ^ b;
-   b  = ((z3 << 13) ^ z3) >> 21;
-   z3 = ((z3 & 4294967280U) << 7) ^ b;
-   b  = ((z4 << 3) ^ z4) >> 12;
-   z4 = ((z4 & 4294967168U) << 13) ^ b;
-   return (z1 ^ z2 ^ z3 ^ z4);
+#include <type_traits>
+
+template <class T> struct tag {
+	using type = T;
+};
+
+template <class T> struct NextSize;
+
+template <> struct NextSize<std::uint8_t>  : tag<std::uint16_t> { };
+template <> struct NextSize<std::uint16_t> : tag<std::uint32_t> { };
+template <> struct NextSize<std::uint32_t> : tag<std::uint64_t> { };
+
+template <> struct NextSize<std::int8_t>  : tag<std::int16_t> { };
+template <> struct NextSize<std::int16_t> : tag<std::int32_t> { };
+template <> struct NextSize<std::int32_t> : tag<std::int64_t> { };
+
+template <std::size_t bits, bool sign> struct MinSizeType;
+template <> struct MinSizeType<8, false> : tag<std::uint8_t> { };
+template <> struct MinSizeType<16, false> : tag<std::uint16_t> { };
+template <> struct MinSizeType<32, false> : tag<std::uint32_t> { };
+template <> struct MinSizeType<64, false> : tag<std::uint64_t> { };
+
+template <> struct MinSizeType<8, true> : tag<std::int8_t> { };
+template <> struct MinSizeType<16, true> : tag<std::int16_t> { };
+template <> struct MinSizeType<32, true> : tag<std::int32_t> { };
+template <> struct MinSizeType<64, true> : tag<std::int64_t> { };
+
+template <typename T>
+inline auto mod(T x, T y) {
+	using widen = typename NextSize<T>::type;
+	constexpr std::size_t shiftCnt = 8 * sizeof(T);
+	return (static_cast<widen>(x) * static_cast<widen>(y)) >> shiftCnt;
+}
+
+template <std::size_t bits>
+inline typename MinSizeType<bits, false>::type rand(void);
+
+template <> inline std::uint16_t rand<16>(void) {
+	static std::uint16_t state = 1;
+    state ^= state << 7;
+    state ^= state >> 9;
+    state ^= state << 8;
+    return state;
+}
+
+template <> inline std::uint32_t rand<32>(void) {
+	static std::uint32_t state = 2463534242;
+    state ^= state << 13;
+    state ^= state >> 17;
+    state ^= state << 5;
+    return state;
+}
+
+template <> inline std::uint64_t rand<64>(void) {
+	static std::uint64_t state = 8817264546332525;
+    state ^= state << 13;
+    state ^= state >> 7;
+    state ^= state << 17;
+    return state;
 }
 
 const taskBase schedulerBase::lottery(void) {
@@ -91,7 +137,8 @@ const taskBase schedulerBase::lottery(void) {
 			ticketSum += t.priority;
 		}
 
-		std::uint32_t draw = lfsr113_Bits() % ticketSum;
+		const auto randVal = rand<16>();
+		auto draw = mod(randVal, ticketSum);
 
 		std::size_t lb = 0;
 		std::size_t hb = 0;
@@ -100,7 +147,10 @@ const taskBase schedulerBase::lottery(void) {
 			if (t.isSleeping()) continue;
 			else {
 				hb += t.priority;
-				if (lb <= draw && draw < hb) return t;
+				if (lb <= draw && draw < hb) {
+					schedulerBase::currProc = i;
+					return t;
+				}
 				lb += t.priority;
 			}
 		}
@@ -147,16 +197,15 @@ __attribute__((naked, interrupt)) void schedulerBase::preempt(void) {
 	_set_SP_register(schedulerBase::sysSp);
 
 	if (currTask.isComplete()) {
-		// mark as dead and let the gc deallocate after a while
-		std::vector<taskBase>::iterator taskToBeErased = schedulerBase::taskList.begin() + schedulerBase::currProc;
+		const std::vector<taskBase>::iterator taskToBeErased = schedulerBase::taskList.begin() + schedulerBase::currProc;
 		schedulerBase::taskList.erase(taskToBeErased);
 		if (++schedulerBase::currProc) schedulerBase::currProc = 0;
 		schedulerBase::numSleeping--;
 	}
 
-//	if (schedulerBase::numSleeping > 0) {
-//
-//	}
+	if (schedulerBase::numSleeping > 0) {
+
+	}
 
 	const taskBase &nextTask = schedulerBase::method();
 	#if defined(__USEMSP430X__)
