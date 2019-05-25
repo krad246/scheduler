@@ -1,6 +1,7 @@
 # FIXED
 
 task.obj: ../task.cpp
+<<<<<<< HEAD
 task.obj: C:/Users/krad2/workspace_v8/sched/Task.h
 task.obj: C:/ti/ccsv8/ccs_base/msp430/include/msp430.h
 task.obj: C:/ti/ccsv8/ccs_base/msp430/include/msp430g2553.h
@@ -123,3 +124,7 @@ C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/__undef_macro
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/support/ti/support.h: 
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.5.LTS/include/libcxx/__undef_macros: 
 C:/Users/krad2/workspace_v8/sched/List.h: 
+=======
+
+../task.cpp: 
+>>>>>>> master

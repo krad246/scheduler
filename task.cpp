@@ -1,101 +1,91 @@
 /*
- * Task.cpp
+ * task.cpp
  *
- *  Created on: Apr 5, 2019
+ *  Created on: May 14, 2019
  *      Author: krad2
  */
 
-#include <Task.h>
+#ifdef TASK_H_
 
-/**
- * Task constructor, creates a user stack and kernel stack and runs at a priority.
- */
-
-Task::Task(func f, std::size_t stackSize, std::size_t priority) : priority(priority) {
-
-	/**
-	 * Enforce the 2-byte boundary rule by rounding the number of bytes to the
-	 * nearest number of words greater or equal in size.
-	 */
-
-	const std::uint16_t NumWordsAllocated = 2 + (stackSize > 0 ? 1 + (stackSize >> 1) : 0);
-//	const std::uint16_t NumWordsAllocated = (stackSize > 0 ? 1 + (stackSize >> 1) : 0);
-
-	/**
-	 * Kernel stack must be big enough to hold R0, R2, R4 - R15. The rest goes to the user stack.
-	 */
-
-	Stack = new std::uint16_t[16 + NumWordsAllocated];
-
-	/**
-	 * Must advance the kernel stack pointer from the base of the stack to the top of the kernel stack.
-	 */
-
-	KernelStackPointer = Stack + NumWordsAllocated;
-	UserStackPointer = KernelStackPointer;
-
-	/**
-	 * We are simulating a stack on the heap, so the following layout is needed:
-	 * 		HIGHER ADDRESS		REGISTER	PURPOSE
-	 * 		SP[0] = [15]		PC			Function identifier / guard bytes
-	 * 		SP[1] = [14]		PC			Idle hook in case function returns
-	 * 		SP[2] = [13]		PC			Function address for entry; gets updated over time
-	 *		SP[3] = [12]		SR			Status bits to maintain interrupt state
-	 *	  	SP[4] - SP[15]		R4 - R15	General purpose register state
-	 */
-
-	/**
-	 * Set the guard bytes, PC / SR values.
-	 */
-
-	KernelStackPointer[15] = (std::uint16_t) f;
-	KernelStackPointer[14] = (std::uint16_t) Task::idle;
-	KernelStackPointer[13] = (std::uint16_t) f;
-	KernelStackPointer[12] = GIE;
-	KernelStackPointer[11] = (std::uint16_t) UserStackPointer;
-
-	/**
-	 * Set default register state.
-	 */
-
-	for (std::int16_t i = 10; i >= 0; i--) {
-		KernelStackPointer[i] = 0x0000;
-	}
-}
-
-/**
- * Destructor must delete previously allocated heap memory.
- */
-
-Task::~Task() {
-	delete[] Stack;
-}
-
-/**
- * Idle task hook. Goes into low power states for efficiency.
- */
-
-void Task::idle(void) {
+std::uint16_t taskBase::idle(void *arg) {
+	(void) arg;
 	_low_power_mode_0();
+	return 0;
 }
 
-/**
- * Wrapper function to create and store a task with the specified attributes.
- * Requires a function pointer for the runnable and can accept a custom size stack and priority.
- */
+template <runnable r, std::size_t priorityVal, std::size_t stackSize>
+task<r, priorityVal, stackSize>::task() {
+	static_assert(priorityVal >= 1, "Task priority must be greater than 1");
+	static_assert(stackSize >= 4, "Stack size must be a minimum of 4 bytes");
 
-void TaskQueue::addTask(func f, std::size_t stackSize, std::size_t priority) {
+	this->func = r;
 
-	/**
-	 * Since our task queue is going to live on the system stack (the actual stack),
-	 * we heap-allocate our tasks for separation and hold pointers to each task for access.
-	 */
+	#if defined (__USEMSP430X__)
+		this->trapframe = new std::uint32_t[15];
+	#else
+		this->trapframe = new std::uint16_t[16];
+	#endif
 
-	Task *proc = new Task(f, stackSize, priority);
+	this->userStack = new std::uint8_t[stackSize];
 
-	/**
-	 * Save the task's reference for access.
-	 */
+	#if defined (__USEMSP430X__)
+		this->trapframe[14] = reinterpret_cast<std::uint32_t>(r);
+		this->trapframe[13] = reinterpret_cast<std::uint32_t>(task::idle);
 
-	push_back(proc);
+		const std::uint32_t highPcBits = reinterpret_cast<std::uint32_t>(r) & 0xF0000;
+		constexpr std::uint16_t gieBits = GIE & 0x0FFF;
+		const std::uint16_t srPlusPc = highPcBits >> 4 | gieBits;
+		const std::uint32_t bottomPcBits = reinterpret_cast<std::uint32_t>(r) & 0xFFFF;
+		const std::uint32_t stateWords = bottomPcBits << 16 | srPlusPc;
+		this->trapframe[12] = reinterpret_cast<std::uint32_t>(stateWords);
+
+		this->trapframe[11] = reinterpret_cast<std::uint32_t>(this->userStack);
+
+		std::memset(this->trapframe, 0x0, 44);
+	#else
+		this->trapframe[15] = reinterpret_cast<std::uint16_t>(r);
+		this->trapframe[14] = reinterpret_cast<std::uint16_t>(task::idle);
+		this->trapframe[13] = reinterpret_cast<std::uint16_t>(r);
+		this->trapframe[12] = GIE;
+		this->trapframe[11] = reinterpret_cast<std::uint16_t>(this->userStack);
+
+		std::memset(this->trapframe, 0x0, 22);
+	#endif
+
+	this->priority = priorityVal;
 }
+
+template <runnable r, std::size_t priorityVal, std::size_t stackSize>
+task<r, priorityVal, stackSize>::~task() {
+	delete[] this->trapframe;
+	delete[] this->userStack;
+}
+
+#pragma FUNC_ALWAYS_INLINE
+inline bool taskBase::isComplete(void) const {
+	#if defined (__USEMSP430X__)
+		std::uint32_t retAddress = this->trapframe[14];
+		return retAddress & 0xFFFFFF00 == 0x00000000;
+	#else
+		std::uint16_t retAddress = this->trapframe[15];
+		return retAddress & 0xFF00 == 0x0000;
+	#endif
+}
+
+#pragma FUNC_ALWAYS_INLINE
+inline bool taskBase::isIdle(void) const {
+	#if defined (__USEMSP430X__)
+		std::uint32_t retAddress = this->trapframe[14];
+		return retAddress == reinterpret_cast<std::uint32_t>(taskBase::idle);
+	#else
+		std::uint16_t retAddress = this->trapframe[14];
+		return retAddress == reinterpret_cast<std::uint16_t>(taskBase::idle);
+	#endif
+}
+
+#pragma FUNC_ALWAYS_INLINE
+inline bool taskBase::isSleeping(void) const {
+	return this->state == taskStates::sleeping;
+}
+
+#endif

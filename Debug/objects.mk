@@ -4,5 +4,9 @@
 
 USER_OBJS :=
 
+<<<<<<< HEAD
 LIBS := -llibc.a
+=======
+LIBS := -llibc.a -llibmath.a
+>>>>>>> master
 

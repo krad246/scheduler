@@ -87,8 +87,13 @@ MEMORY
 
 SECTIONS
 {
+<<<<<<< HEAD
     .bss        : {} > RAM            		/* Global & static vars              */
     .data       : {} > RAM            		/* Global & static vars              */
+=======
+    .bss        : {} > RAM                  /* Global & static vars              */
+    .data       : {} > RAM                  /* Global & static vars              */
+>>>>>>> master
     .TI.noinit  : {} > RAM                  /* For #pragma noinit                */
     .sysmem     : {} > RAM                  /* Dynamic memory allocation area    */
     .stack      : {} > RAM (HIGH)           /* Software system stack             */
