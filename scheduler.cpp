@@ -128,32 +128,33 @@ template <> inline std::uint64_t rand<64>(void) {
     return state;
 }
 
-const taskBase schedulerBase::lottery(void) {
+#pragma FUNC_ALWAYS_INLINE
+inline const taskBase schedulerBase::lottery(void) {
 	const std::size_t sz = schedulerBase::taskList.size();
+	static std::vector<std::size_t> intervals;
+	intervals.reserve(sz);
+
 	if (schedulerBase::numSleeping != sz - 1) {
-		std::size_t ticketSum = 0;
-		for (std::size_t i = 1; i < schedulerBase::taskList.size(); ++i) {
-			const taskBase &t = schedulerBase::taskList[i];
-			ticketSum += t.priority;
+		if (intervals.size() != sz) {
+			intervals.clear();
+
+			std::size_t bound = 0;
+			intervals.push_back(bound);
+			for (std::size_t i = 1; i < schedulerBase::taskList.size(); ++i) {
+				const taskBase &t = schedulerBase::taskList[i];
+				if (!t.isSleeping()) bound += t.priority;
+				intervals.push_back(bound);
+			}
 		}
 
+		const std::size_t ticketSum = intervals.back();
 		const auto randVal = rand<16>();
 		auto draw = mod(randVal, ticketSum);
 
-		std::size_t lb = 0;
-		std::size_t hb = 0;
-		for (std::size_t i = 1; i < schedulerBase::taskList.size(); ++i) {
-			const taskBase &t = schedulerBase::taskList[i];
-			if (t.isSleeping()) continue;
-			else {
-				hb += t.priority;
-				if (lb <= draw && draw < hb) {
-					schedulerBase::currProc = i;
-					return t;
-				}
-				lb += t.priority;
-			}
-		}
+		const std::vector<std::size_t>::iterator pos = std::upper_bound(intervals.begin(), intervals.end(), draw);
+		const auto idx = pos - intervals.begin();
+		schedulerBase::currProc = idx;
+		return schedulerBase::taskList[idx];
 	}
 
 	return schedulerBase::taskList[0];

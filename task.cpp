@@ -78,7 +78,7 @@ inline bool taskBase::isIdle(void) const {
 		std::uint32_t retAddress = this->trapframe[14];
 		return retAddress == reinterpret_cast<std::uint32_t>(taskBase::idle);
 	#else
-		std::uint16_t retAddress = this->trapframe[14];
+		std::uint16_t retAddress = this->trapframe[15];
 		return retAddress == reinterpret_cast<std::uint16_t>(taskBase::idle);
 	#endif
 }
