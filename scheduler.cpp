@@ -156,6 +156,29 @@ inline const taskBase schedulerBase::lottery(void) {
 		const auto idx = pos - intervals.begin();
 		schedulerBase::currProc = idx;
 		return schedulerBase::taskList[idx];
+
+//		std::size_t ticketSum = 0;
+//		for (auto i = schedulerBase::taskList.begin() + 1; i < schedulerBase::taskList.end(); ++i) {
+//			ticketSum += i->priority;
+//		}
+//
+//		const auto randVal = rand<16>();
+//		auto draw = mod(randVal, ticketSum);
+//
+//		std::size_t lb = 0;
+//		std::size_t hb = 0;
+//		for (auto i = schedulerBase::taskList.begin() + 1; i < schedulerBase::taskList.end(); ++i) {
+//			const taskBase &t = *i;
+//			if (t.isSleeping()) continue;
+//			else {
+//				hb += i->priority;
+//				if (lb <= draw && draw < hb) {
+//					schedulerBase::currProc = i - schedulerBase::taskList.begin();
+//					return t;
+//				}
+//				lb += i->priority;
+//			}
+//		}
 	}
 
 	return schedulerBase::taskList[0];

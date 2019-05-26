@@ -27,7 +27,7 @@ std::uint16_t baz(void *x) {
 int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
 
-	scheduler<schedulerBase::lottery> p {
+	scheduler<> p {
 		task<bar, 1>(), task<baz, 3>()
 	};
 
