@@ -39,7 +39,8 @@ void schedulerBase::start(void) {
 	sys::restoreContext();
 }
 
-const taskBase schedulerBase::roundRobin(void) {
+#pragma FUNC_ALWAYS_INLINE
+inline const taskBase schedulerBase::roundRobin(void) {
 	static std::size_t numTimesRun = 0;
 	const std::size_t sz = schedulerBase::taskList.size();
 
