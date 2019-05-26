@@ -186,7 +186,7 @@ inline const taskBase schedulerBase::lottery(void) {
 
 #pragma vector = WDT_VECTOR
 __attribute__((naked, interrupt)) void schedulerBase::preempt(void) {
-	taskBase currTask = schedulerBase::taskList[schedulerBase::currProc];
+	taskBase &currTask = schedulerBase::taskList[schedulerBase::currProc];
 
 	#if defined (__USEMSP430X__)
 		std::uint32_t sp = _get_SP_register();
