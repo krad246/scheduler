@@ -7,29 +7,59 @@
 
 #ifdef SCHEDULER_H_
 
-std::size_t schedulerBase::currProc = 1;
-std::vector<taskBase> schedulerBase::taskList = std::vector<taskBase>();
-std::size_t schedulerBase::numSleeping = 0;
-schedulingMethod schedulerBase::method = nullptr;
+std::size_t scheduler::currProc = 1;
+std::vector<task> scheduler::taskList = std::vector<task>();
+std::size_t scheduler::numSleeping = 0;
+schedulingMethod scheduler::method = nullptr;
 
 #if defined (__USEMSP430X__)
-	std::uint32_t schedulerBase::sysSp = 0;
+	std::uint32_t scheduler::sysSp = 0;
 #else
-	std::uint16_t schedulerBase::sysSp = 0;
+	std::uint16_t scheduler::sysSp = 0;
 #endif
 
-template <schedulingMethod m>
-constexpr scheduler<m>::scheduler(const std::initializer_list<taskBase>& tasks) {
-	task<taskBase::idle> idleTask;
-	schedulerBase::taskList.push_back(idleTask);
-	for (auto i = begin(tasks); i < end(tasks); ++i) schedulerBase::taskList.push_back(*i);
-	schedulerBase::method = m;
+constexpr unsigned gcd(unsigned const a, unsigned const b) {
+	return b ? gcd(b, a % b) : a;
 }
 
-void schedulerBase::start(void) {
-	schedulerBase::sysSp = _get_SP_register();
+constexpr unsigned lcm(int const a, int const b) {
+	return abs(a * b) / gcd(abs(a), abs(b));
+}
 
-	const taskBase &nextTask = schedulerBase::taskList[schedulerBase::currProc];
+scheduler::scheduler(schedulingMethod m, const std::initializer_list<task>& tasks) {
+	scheduler::taskList.push_back(task(task::idle));
+
+	if (m == scheduler::stride) {
+		auto t0 = tasks.begin();
+		auto t1 = tasks.begin() + 1;
+
+		auto p0 = t0->priority;
+		auto p1 = t0->priority;
+
+		auto baseStride = lcm(p0, p1);
+		for (auto i = begin(tasks) + 2; i < end(tasks); ++i) {
+			baseStride = lcm(baseStride, i->priority);
+		}
+
+		for (auto i = begin(tasks); i < end(tasks); ++i) {
+			task strideTask(*i);
+			strideTask.priority = baseStride / i->priority;
+			scheduler::taskList.push_back(strideTask);
+		}
+
+	} else {
+		for (auto i = begin(tasks); i < end(tasks); ++i) {
+			scheduler::taskList.push_back(*i);
+		}
+	}
+
+	scheduler::method = m;
+}
+
+void scheduler::start(void) {
+	scheduler::sysSp = _get_SP_register();
+
+	const task &nextTask = scheduler::taskList[scheduler::currProc];
 	#if defined(__USEMSP430X__)
 		_set_SP_register(reinterpret_cast<std::uint32_t>(nextTask.trapframe));
 	#else
@@ -40,32 +70,32 @@ void schedulerBase::start(void) {
 }
 
 #pragma FUNC_ALWAYS_INLINE
-inline const taskBase schedulerBase::roundRobin(void) {
-	static std::size_t numTimesRun = 0;
-	const std::size_t sz = schedulerBase::taskList.size();
+inline const task scheduler::roundRobin(void) {
+	static volatile std::size_t numTimesRun = 0;
+	const std::size_t sz = scheduler::taskList.size();
 
-	if (schedulerBase::numSleeping != sz - 1) {
+	if (scheduler::numSleeping != sz - 1) {
 		while (1) {
-			const taskBase &t = schedulerBase::taskList[schedulerBase::currProc];
-			if (t.isSleeping()) schedulerBase::currProc++;
+			const task &t = scheduler::taskList[scheduler::currProc];
+			if (t.isSleeping()) scheduler::currProc++;
 			else {
 				const bool taskRunEnoughTimes = (numTimesRun >= t.priority);
 
 				if (taskRunEnoughTimes) {
 					numTimesRun = 0;
-					schedulerBase::currProc++;
-					if (schedulerBase::currProc == sz) {
-						schedulerBase::currProc = (schedulerBase::numSleeping != sz - 1);
+					scheduler::currProc++;
+					if (scheduler::currProc >= sz) {
+						scheduler::currProc = (scheduler::numSleeping != sz - 1);
 					}
 				}
 
 				numTimesRun++;
-				return schedulerBase::taskList[schedulerBase::currProc];
+				return scheduler::taskList[scheduler::currProc];
 			}
 		}
 	}
 
-	return schedulerBase::taskList[0];
+	return scheduler::taskList[0];
 }
 
 #include <type_traits>
@@ -95,8 +125,8 @@ template <> struct MinSizeType<16, true> : tag<std::int16_t> { };
 template <> struct MinSizeType<32, true> : tag<std::int32_t> { };
 template <> struct MinSizeType<64, true> : tag<std::int64_t> { };
 
-template <typename T>
-inline auto mod(T x, T y) {
+#pragma FUNC_ALWAYS_INLINE
+template <typename T> inline auto mod(T x, T y) {
 	using widen = typename NextSize<T>::type;
 	constexpr std::size_t shiftCnt = 8 * sizeof(T);
 	return (static_cast<widen>(x) * static_cast<widen>(y)) >> shiftCnt;
@@ -130,19 +160,19 @@ template <> inline std::uint64_t rand<64>(void) {
 }
 
 #pragma FUNC_ALWAYS_INLINE
-inline const taskBase schedulerBase::lottery(void) {
-	const std::size_t sz = schedulerBase::taskList.size();
+inline const task scheduler::lottery(void) {
+	const std::size_t sz = scheduler::taskList.size();
 	static std::vector<std::size_t> intervals;
 	intervals.reserve(sz);
 
-	if (schedulerBase::numSleeping != sz - 1) {
+	if (scheduler::numSleeping != sz - 1) {
 		if (intervals.size() != sz) {
 			intervals.clear();
 
 			std::size_t bound = 0;
 			intervals.push_back(bound);
-			for (std::size_t i = 1; i < schedulerBase::taskList.size(); ++i) {
-				const taskBase &t = schedulerBase::taskList[i];
+			for (std::size_t i = 1; i < scheduler::taskList.size(); ++i) {
+				const task &t = scheduler::taskList[i];
 				if (!t.isSleeping()) bound += t.priority;
 				intervals.push_back(bound);
 			}
@@ -154,8 +184,8 @@ inline const taskBase schedulerBase::lottery(void) {
 
 		const std::vector<std::size_t>::iterator pos = std::upper_bound(intervals.begin(), intervals.end(), draw);
 		const auto idx = pos - intervals.begin();
-		schedulerBase::currProc = idx;
-		return schedulerBase::taskList[idx];
+		scheduler::currProc = idx;
+		return scheduler::taskList[idx];
 
 //		std::size_t ticketSum = 0;
 //		for (auto i = schedulerBase::taskList.begin() + 1; i < schedulerBase::taskList.end(); ++i) {
@@ -181,12 +211,23 @@ inline const taskBase schedulerBase::lottery(void) {
 //		}
 	}
 
-	return schedulerBase::taskList[0];
+	return scheduler::taskList[0];
+}
+
+#pragma FUNC_ALWAYS_INLINE
+inline const task scheduler::stride(void) {
+	const std::size_t sz = scheduler::taskList.size();
+
+	if (scheduler::numSleeping != sz - 1) {
+
+	}
+
+	return scheduler::taskList[0];
 }
 
 #pragma vector = WDT_VECTOR
-__attribute__((naked, interrupt)) void schedulerBase::preempt(void) {
-	taskBase &currTask = schedulerBase::taskList[schedulerBase::currProc];
+__attribute__((naked, interrupt)) void scheduler::preempt(void) {
+	task &currTask = scheduler::taskList[scheduler::currProc];
 
 	#if defined (__USEMSP430X__)
 		std::uint32_t sp = _get_SP_register();
@@ -219,20 +260,21 @@ __attribute__((naked, interrupt)) void schedulerBase::preempt(void) {
 
 	sys::saveContext();
 
-	_set_SP_register(schedulerBase::sysSp);
+	_set_SP_register(scheduler::sysSp);
 
 	if (currTask.isComplete()) {
-		const std::vector<taskBase>::iterator taskToBeErased = schedulerBase::taskList.begin() + schedulerBase::currProc;
-		schedulerBase::taskList.erase(taskToBeErased);
-		if (++schedulerBase::currProc) schedulerBase::currProc = 0;
-		schedulerBase::numSleeping--;
+		const std::vector<task>::iterator taskToBeErased = scheduler::taskList.begin() + scheduler::currProc;
+		scheduler::taskList.erase(taskToBeErased);
+		if (++scheduler::currProc) scheduler::currProc = 0;
+		scheduler::numSleeping--;
 	}
 
-	if (schedulerBase::numSleeping > 0) {
+	if (scheduler::numSleeping > 0) {
 
 	}
 
-	const taskBase &nextTask = schedulerBase::method();
+	const task &nextTask = scheduler::method();
+
 	#if defined(__USEMSP430X__)
 		_set_SP_register(reinterpret_cast<std::uint32_t>(nextTask.trapframe));
 	#else

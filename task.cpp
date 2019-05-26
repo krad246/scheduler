@@ -7,17 +7,13 @@
 
 #ifdef TASK_H_
 
-std::uint16_t taskBase::idle(void *arg) {
+std::uint16_t task::idle(void *arg) {
 	(void) arg;
 	_low_power_mode_0();
 	return 0;
 }
 
-template <runnable r, std::size_t priorityVal, std::size_t stackSize>
-task<r, priorityVal, stackSize>::task() {
-	static_assert(priorityVal >= 1, "Task priority must be greater than 1");
-	static_assert(stackSize >= 4, "Stack size must be a minimum of 4 bytes");
-
+task::task(runnable r, std::size_t priorityVal, std::size_t stackSize) {
 	this->func = r;
 
 	#if defined (__USEMSP430X__)
@@ -55,14 +51,13 @@ task<r, priorityVal, stackSize>::task() {
 	this->priority = priorityVal;
 }
 
-template <runnable r, std::size_t priorityVal, std::size_t stackSize>
-task<r, priorityVal, stackSize>::~task() {
+task::~task() {
 	delete[] this->trapframe;
 	delete[] this->userStack;
 }
 
 #pragma FUNC_ALWAYS_INLINE
-inline bool taskBase::isComplete(void) const {
+inline bool task::isComplete(void) const {
 	#if defined (__USEMSP430X__)
 		std::uint32_t retAddress = this->trapframe[14];
 		return retAddress & 0xFFFFFF00 == 0x00000000;
@@ -73,10 +68,10 @@ inline bool taskBase::isComplete(void) const {
 }
 
 #pragma FUNC_ALWAYS_INLINE
-inline bool taskBase::isIdle(void) const {
+inline bool task::isIdle(void) const {
 	#if defined (__USEMSP430X__)
 		std::uint32_t retAddress = this->trapframe[14];
-		return retAddress == reinterpret_cast<std::uint32_t>(taskBase::idle);
+		return retAddress == reinterpret_cast<std::uint32_t>(task::idle);
 	#else
 		std::uint16_t retAddress = this->trapframe[15];
 		return retAddress == reinterpret_cast<std::uint16_t>(taskBase::idle);
@@ -84,7 +79,7 @@ inline bool taskBase::isIdle(void) const {
 }
 
 #pragma FUNC_ALWAYS_INLINE
-inline bool taskBase::isSleeping(void) const {
+inline bool task::isSleeping(void) const {
 	return this->state == taskStates::sleeping;
 }
 

@@ -13,23 +13,29 @@
 #include <vector>
 #include <type_traits>
 #include <cstring>
+#include <algorithm>
+#include <cstddef>
 
 #include "context.h"
 
-using schedulingMethod = const taskBase (*)(void);
+using schedulingMethod = const task (*)(void);
 
-class schedulerBase {
+class scheduler {
 public:
+	scheduler(schedulingMethod m, const std::initializer_list<task>& tasks);
+
 	void start(void);
 
-	static const taskBase roundRobin(void);
-	static const taskBase lottery(void);
+	static const task roundRobin(void);
+	static const task lottery(void);
+	static const task stride(void);
 
 	static interrupt void preempt(void);
 
-protected:
+private:
 	static std::size_t currProc;
-	static std::vector<taskBase> taskList;
+	static std::vector<task> taskList;
+
 	static std::size_t numSleeping;
 
 	#if defined (__USEMSP430X__)
@@ -39,12 +45,6 @@ protected:
 	#endif
 
 	static schedulingMethod method;
-};
-
-template <schedulingMethod m = schedulerBase::roundRobin>
-class scheduler : public schedulerBase {
-public:
-	constexpr scheduler(const std::initializer_list<taskBase>& tasks);
 };
 
 #include <scheduler.cpp>

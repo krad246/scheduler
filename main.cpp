@@ -3,6 +3,7 @@
 #include <vector>
 #include <scheduler.h>
 #include <cstdint>
+
 void foo(int*x){
 	*x = *x + 1;
 }
@@ -27,10 +28,11 @@ std::uint16_t baz(void *x) {
 int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
 
-	scheduler<schedulerBase::lottery> p {
-		task<bar, 1>(), task<baz, 3>()
+	std::initializer_list<task> tasks = {
+		task(bar, 1), task(baz, 3)
 	};
 
+	scheduler p(scheduler::roundRobin, tasks);
 
 	WDTCTL = WDT_MDLY_8;
 
