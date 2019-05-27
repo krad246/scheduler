@@ -39,6 +39,7 @@ protected:
 	#endif
 	std::size_t priority;
 	taskStates state = taskStates::alive;
+	std::uint8_t *userStack;
 
 private:
 	friend class schedulerBase;
@@ -47,13 +48,8 @@ private:
 template <runnable r, std::size_t priorityVal = 1, std::size_t stackSize = 4>
 class task : public taskBase {
 public:
-
 	task();
 	~task();
-
-private:
-	runnable func;
-	std::uint8_t *userStack;
 };
 
 #include <task.cpp>
