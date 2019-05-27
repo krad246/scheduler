@@ -21,8 +21,8 @@ schedulingMethod schedulerBase::method = nullptr;
 template <schedulingMethod m>
 constexpr scheduler<m>::scheduler(const std::initializer_list<taskBase>& tasks) {
 	task<taskBase::idle> idleTask;
-	schedulerBase::taskList.push_back(idleTask);
-	for (auto i = begin(tasks); i < end(tasks); ++i) schedulerBase::taskList.push_back(*i);
+	schedulerBase::taskList.emplace_back(idleTask);
+	for (auto i = begin(tasks); i < end(tasks); ++i) schedulerBase::taskList.emplace_back(*i);
 	schedulerBase::method = m;
 }
 
@@ -33,7 +33,7 @@ void schedulerBase::start(void) {
 	#if defined(__USEMSP430X__)
 		_set_SP_register(reinterpret_cast<std::uint32_t>(nextTask.trapframe));
 	#else
-		set_SP_register(reinterpret_cast<std::uint16_t>(nextTask.trapframe));
+		_set_SP_register(reinterpret_cast<std::uint16_t>(nextTask.trapframe));
 	#endif
 
 	sys::restoreContext();
@@ -144,7 +144,7 @@ inline const taskBase schedulerBase::lottery(void) {
 			for (std::size_t i = 1; i < schedulerBase::taskList.size(); ++i) {
 				const taskBase &t = schedulerBase::taskList[i];
 				if (!t.isSleeping()) bound += t.priority;
-				intervals.push_back(bound);
+				intervals.emplace_back(bound);
 			}
 		}
 

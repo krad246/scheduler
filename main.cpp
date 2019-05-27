@@ -31,7 +31,6 @@ int main(void) {
 		task<bar, 1>(), task<baz, 3>()
 	};
 
-
 	WDTCTL = WDT_MDLY_8;
 
 	SFRIE1 |= WDTIE;
