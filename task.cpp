@@ -18,6 +18,8 @@ task<r, priorityVal, stackSize>::task() {
 	static_assert(priorityVal >= 1, "Task priority must be greater than 1");
 	static_assert(stackSize >= 4, "Stack size must be a minimum of 4 bytes");
 
+	this->func = r;
+
 	#if defined (__USEMSP430X__)
 		this->trapframe = new std::uint32_t[15];
 	#else
