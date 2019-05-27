@@ -133,15 +133,14 @@ template <> inline std::uint64_t rand<64>(void) {
 inline const taskBase schedulerBase::lottery(void) {
 	const std::size_t sz = schedulerBase::taskList.size();
 	static std::vector<std::size_t> intervals;
-	intervals.reserve(sz);
 
 	if (schedulerBase::numSleeping != sz - 1) {
 		if (intervals.size() != sz) {
-			intervals.clear();
+			intervals.reserve(sz);
 
 			std::size_t bound = 0;
 			intervals.push_back(bound);
-			for (std::size_t i = 1; i < schedulerBase::taskList.size(); ++i) {
+			for (std::size_t i = 1; i < sz; ++i) {
 				const taskBase &t = schedulerBase::taskList[i];
 				if (!t.isSleeping()) bound += t.priority;
 				intervals.emplace_back(bound);
