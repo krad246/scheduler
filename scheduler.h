@@ -1,3 +1,4 @@
+
 /*
  * scheduler.h
  *
@@ -66,6 +67,7 @@ public:
 
 	inline task &get_current_process(void);
 	inline void sleep(std::size_t ticks);
+//	void sleep(std::size_t ticks);
 };
 
 template <scheduling_algorithms alg>
@@ -105,14 +107,24 @@ extern __attribute__((naked, interrupt)) void bob(void);
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::sleep(const std::size_t ticks) {
 	this->current_process->sleep(ticks);
-
-	// idle task stack gets messed up if this is uncommented ?
-	// improves latency of sleep activations though
-
-//	// push dummy words
-//	_set_SP_register(_get_SP_register() - 4);
-//	// call the scheduler
-//	bob();
+	_low_power_mode_0(); // wait for interrupts - not as efficient as callign the scheduler but still a WIP on that one
 }
+
+//template <scheduling_algorithms alg>
+//void scheduler<alg>::sleep(const std::size_t ticks) {
+//	_disable_interrupt();
+//
+//	const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
+//	*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
+//	*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
+//
+//	this->current_process->sleep(ticks);
+//
+//	// idle task stack gets messed up if this is uncommented ?
+//	// improves latency of sleep activations though
+//
+////	// call the scheduler
+//	bob();
+//}
 
 #endif /* SCHEDULER_H_ */

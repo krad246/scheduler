@@ -87,8 +87,6 @@ inline void task::pause(void) {
 	// combine upper byte of pc with rest of pc and put correct stack pointer in context block
 	this->context[8] = static_cast<std::uint32_t>(top_bits) << 16 | *(stack_top + 1);
 	this->context[7] = __get_SP_register();
-	this->info.stack_usage = this->ustack.get() + this->info.stack_size - reinterpret_cast<std::uint16_t *>(__get_SP_register()); // is this working?
-
 }
 
 #pragma FUNC_ALWAYS_INLINE
@@ -102,7 +100,8 @@ inline void task::load(void) {
 }
 
 inline void task::update(void) {
-	 this->info.sleep_ticks--;
+	if (this->info.sleep_ticks > 0) this->info.sleep_ticks--;
+	this->info.stack_usage = this->ustack.get() + this->info.stack_size - reinterpret_cast<std::uint16_t *>(this->context[7]); // is this working?
 }
 
 inline void task::sleep(const std::size_t ticks) {
