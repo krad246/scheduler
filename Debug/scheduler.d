@@ -79,6 +79,13 @@ scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcx
 scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/functional
 scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/cstdarg
 scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/stdarg.h
+scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/unordered_map
+scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__hash_table
+scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/cmath
+scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/math.h
+scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/math.h
+scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/_defs.h
+scheduler.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__undef_macros
 
 ../scheduler.cpp: 
 C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.h: 
@@ -159,3 +166,10 @@ C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__undef_macro
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/functional: 
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/cstdarg: 
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/stdarg.h: 
+C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/unordered_map: 
+C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__hash_table: 
+C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/cmath: 
+C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/math.h: 
+C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/math.h: 
+C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/_defs.h: 
+C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__undef_macros: 

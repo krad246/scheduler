@@ -18,14 +18,13 @@
 
 class task;
 
-class message {
-public:
-	message(const task *src, const task *target);
+struct message {
+	message(const task *src, const task *target, void *data);
 
-private:
 	std::int16_t (*sender)(void) = nullptr;
 	std::int16_t (*receiver)(void) = nullptr;
 
+	void *data_ptr = nullptr;
 };
 
 struct thread_info {
@@ -36,6 +35,8 @@ struct thread_info {
 
 	std::size_t ticks;
 	std::size_t sleep_ticks;
+
+	bool blocking;
 };
 
 class task {
@@ -48,9 +49,13 @@ public:
 
 	inline void update(void);
 	inline void sleep(const std::size_t ticks);
+	inline void block(void);
+	inline void unblock(void);
 
+	inline std::uint16_t get_latest_sp(void) const;
 	inline std::uint8_t get_priority() const;
 	inline bool sleeping(void) const;
+	inline bool blocking(void) const;
 
 	static std::int16_t idle(void);
 	static task idle_hook;
@@ -100,14 +105,28 @@ inline void task::load(void) {
 }
 
 inline void task::update(void) {
-	if (this->info.sleep_ticks > 0) this->info.sleep_ticks--;
-	this->info.stack_usage = this->ustack.get() + this->info.stack_size - reinterpret_cast<std::uint16_t *>(this->context[7]); // is this working?
+	if (this->info.sleep_ticks > 0) {
+		this->info.sleep_ticks--;
+	}
+
+	this->info.stack_usage = this->ustack.get() + this->info.stack_size - reinterpret_cast<std::uint16_t *>(this->get_latest_sp()); // is this working?
+}
+
+inline void task::block(void) {
+	this->info.blocking = true;
 }
 
 inline void task::sleep(const std::size_t ticks) {
 	__disable_interrupt();
-	if (this->info.sleep_ticks == 0) this->info.sleep_ticks = ticks;
-	__enable_interrupt();
+	this->info.sleep_ticks = ticks;
+}
+
+inline void task::unblock(void) {
+	this->info.blocking = false;
+}
+
+inline std::uint16_t task::get_latest_sp(void) const {
+	return this->context[7];
 }
 
 inline std::uint8_t task::get_priority() const {
@@ -116,6 +135,10 @@ inline std::uint8_t task::get_priority() const {
 
 inline bool task::sleeping(void) const {
 	return this->info.sleep_ticks > 0;
+}
+
+inline bool task::blocking(void) const {
+	return this->info.blocking;
 }
 
 

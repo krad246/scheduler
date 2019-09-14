@@ -1,14 +1,17 @@
 #include <msp430.h> 
 #include <task.h>
 #include <scheduler.h>
+#include <print.h>
 
 std::int16_t foo(void);
 std::int16_t bar(void);
+std::int16_t printer(void);
 
 task x = task(foo, 32);
 task y = task(bar, 32);
+//task z = task(printer, 32, 100);
 
-scheduler<scheduling_algorithms::round_robin> s({x, y});
+scheduler<scheduling_algorithms::round_robin> os({x, y});
 
 std::int16_t foo(void) {
 	volatile std::uint32_t q = 31;
@@ -19,7 +22,7 @@ std::int16_t foo(void) {
 	while (1) {
 		P1OUT ^= BIT0;
 		q++;
-		s.sleep(64);
+		os.sleep(64);
 	}
 }
 
@@ -32,7 +35,14 @@ std::int16_t bar(void) {
 	while (1) {
 		P4OUT ^= BIT7;
 		q++;
-		s.sleep(1);
+		os.sleep(1);
+	}
+}
+
+std::int16_t printer(void) {
+	while (1) {
+		puts("Hello, world!");
+		os.sleep(4);
 	}
 }
 
@@ -52,8 +62,8 @@ std::int16_t bar(void) {
 #pragma vector = WDT_VECTOR
 __attribute__((naked, interrupt)) void bob(void) {
 //	x.pause();
-	s.enter_kernel_mode();
-	s.leave_kernel_mode();
+	os.enter_kernel_mode();
+	os.leave_kernel_mode();
 
 	// switch sp to scheduler stack pointer
 
@@ -70,8 +80,8 @@ int main(void)
 	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
 	WDTCTL = WDT_ADLY_16;
 	SFRIE1 |= WDTIE;
-
-	s.start();
+	//initUART();
+	os.start();
 	return 0;
 }
 

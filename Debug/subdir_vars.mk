@@ -34,7 +34,6 @@ CPP_DEPS__QUOTED += \
 "task.d" 
 
 CPP_SRCS__QUOTED += \
-"../main.cpp" \
 "../scheduler.cpp" \
 "../task.cpp" 
 

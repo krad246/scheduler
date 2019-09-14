@@ -18,7 +18,7 @@ task &base_scheduler<scheduling_algorithms::round_robin>::schedule(void) {
 		task &t = proc.first;
 		const std::size_t run_counts_remaining = proc.second;
 
-		if (!t.sleeping()) {
+		if (!t.sleeping() && !t.blocking()) {
 			if (run_counts_remaining > 0) {
 				proc.second--;
 				break;

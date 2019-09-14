@@ -9,10 +9,10 @@
 
 task task::idle_hook = task(task::idle, 32);
 
-message::message(const task *src, const task *target) {
+message::message(const task *src, const task *target, void *data) {
 	this->sender = src->runnable;
 	this->receiver = target->runnable;
-
+	this->data_ptr = data;
 }
 
 task::task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t priority) {
