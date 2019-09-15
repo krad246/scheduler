@@ -96,7 +96,7 @@ int main(void)
 	initUART();
 
 	task x = task(foo, 32);
-	task y = task(bar, 128, 3);
+	task y = task(bar, 64, 3);
 	task z = task(printer1, 128);
 	task a = task(printer2, 128);
 	task b = task(printer3, 128);

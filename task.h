@@ -103,7 +103,8 @@ inline void task::load(void) {
 	this->info.ticks++;
 
 	//
-	__enable_interrupt();
+//	__enable_interrupt();
+	SFRIE1 |= WDTIE;
 	longjmp(this->context, 1);
 }
 
