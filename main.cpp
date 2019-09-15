@@ -32,15 +32,15 @@ std::int16_t bar(void) {
 
 	while (1) {
 		P4OUT ^= BIT7;
-//		print("%u\n\r", os.get_thread_state().stack_usage);
+		print("%u\n\r", os.get_thread_state().stack_usage);
 		q++;
-		os.sleep(2);
+		os.sleep(32);
 	}
 }
 
 std::int16_t printer1(void) {
 	while (1) {
-		puts("printer2\n\r");
+		puts("printer1\n\r");
 		os.sleep(1);
 	}
 }
