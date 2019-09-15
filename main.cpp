@@ -74,14 +74,19 @@ __attribute__((naked, interrupt)) void bob(void) {
 int main(void)
 {
 	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
-	WDTCTL = WDT_ADLY_16;
-	SFRIE1 |= WDTIE;
+
+	_disable_interrupt();
 	initUART();
+
 	task x = task(foo, 32);
 	task y = task(bar, 32);
-	task z = task(printer, 100);
+	task z = task(printer, 128);
 
-	os.start({x, y});
+	os.start({
+		std::move(x),
+		std::move(y),
+		std::move(z),
+	});
 	return 0;
 }
 

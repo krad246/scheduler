@@ -42,7 +42,8 @@ struct thread_info {
 class task {
 public:
 	task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t priority = 1);
-	task(const task &other);
+	explicit task(const task &other);
+	task(task &&other);
 
 	inline void pause(void);
 	inline void load(void);

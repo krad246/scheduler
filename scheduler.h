@@ -112,7 +112,10 @@ void scheduler<alg>::start(void) {
 		// halt
 	}
 
-	//this->isr_message_table.insert(std::make_pair<isr, std::queue<message>>(reinterpret_cast<isr>(USCI_A1_ISR), std::queue<message>()));
+	WDTCTL = WDT_ADLY_16;
+	SFRIE1 |= WDTIE;
+
+	this->isr_message_table.insert(std::make_pair<isr, std::queue<message>>(reinterpret_cast<isr>(USCI_A1_ISR), std::queue<message>()));
 	this->schedule().load();
 }
 
@@ -123,8 +126,6 @@ void scheduler<alg>::start(const std::initializer_list<task> &task_list) {
 	}
 
 	new (this) scheduler(task_list);
-
-	//this->isr_message_table.insert(std::make_pair<isr, std::queue<message>>(reinterpret_cast<isr>(USCI_A1_ISR), std::queue<message>()));
 	this->start();
 }
 
@@ -141,7 +142,7 @@ inline void scheduler<alg>::leave_kstack(void) {
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::enter_kernel_mode(void) {
 	this->get_current_process().pause();
-//	_set_SP_register(this->kstack_ptr);
+	_set_SP_register(this->kstack_ptr);
 }
 
 template <scheduling_algorithms alg>
