@@ -66,9 +66,11 @@ private:
 template <scheduling_algorithms alg>
 class scheduler : protected base_scheduler<alg> {
 public:
+	scheduler();
 	scheduler(const std::initializer_list<task> &task_list);
 
 	void start(void);
+	void start(const std::initializer_list<task> &task_list);
 
 	inline void enter_kernel_mode(void);
 	inline void leave_kernel_mode(void);
@@ -88,6 +90,11 @@ public:
 };
 
 template <scheduling_algorithms alg>
+scheduler<alg>::scheduler() {
+	this->kstack_ptr = 0x0000;
+}
+
+template <scheduling_algorithms alg>
 scheduler<alg>::scheduler(const std::initializer_list<task> &task_list) : base_scheduler<alg>(task_list) {
 	this->kstack_ptr = _get_SP_register();
 }
@@ -101,8 +108,24 @@ extern interrupt void USCI_A1_ISR(void);
 
 template <scheduling_algorithms alg>
 void scheduler<alg>::start(void) {
+	if (this->tasks.size() == 0) {
+		// halt
+	}
+
 	//this->isr_message_table.insert(std::make_pair<isr, std::queue<message>>(reinterpret_cast<isr>(USCI_A1_ISR), std::queue<message>()));
 	this->schedule().load();
+}
+
+template <scheduling_algorithms alg>
+void scheduler<alg>::start(const std::initializer_list<task> &task_list) {
+	if (task_list.size() == 0) {
+		// halt
+	}
+
+	new (this) scheduler(task_list);
+
+	//this->isr_message_table.insert(std::make_pair<isr, std::queue<message>>(reinterpret_cast<isr>(USCI_A1_ISR), std::queue<message>()));
+	this->start();
 }
 
 template <scheduling_algorithms alg>
@@ -118,7 +141,7 @@ inline void scheduler<alg>::leave_kstack(void) {
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::enter_kernel_mode(void) {
 	this->get_current_process().pause();
-	_set_SP_register(this->kstack_ptr);
+//	_set_SP_register(this->kstack_ptr);
 }
 
 template <scheduling_algorithms alg>

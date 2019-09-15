@@ -48,6 +48,10 @@ task &base_scheduler<scheduling_algorithms::lottery>::schedule(void) {
 
 }
 
+base_scheduler<scheduling_algorithms::round_robin>::base_scheduler() {
+
+}
+
 base_scheduler<scheduling_algorithms::round_robin>::base_scheduler(const std::initializer_list<task> &task_list) {
 	std::transform (
 		task_list.begin(),

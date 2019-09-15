@@ -7,11 +7,7 @@ std::int16_t foo(void);
 std::int16_t bar(void);
 std::int16_t printer(void);
 
-task x = task(foo, 32);
-task y = task(bar, 32);
-//task z = task(printer, 32, 100);
-
-scheduler<scheduling_algorithms::round_robin> os({x, y});
+scheduler<scheduling_algorithms::round_robin> os;
 
 std::int16_t foo(void) {
 	volatile std::uint32_t q = 31;
@@ -80,8 +76,12 @@ int main(void)
 	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
 	WDTCTL = WDT_ADLY_16;
 	SFRIE1 |= WDTIE;
-	//initUART();
-	os.start();
+	initUART();
+	task x = task(foo, 32);
+	task y = task(bar, 32);
+	task z = task(printer, 100);
+
+	os.start({x, y});
 	return 0;
 }
 
