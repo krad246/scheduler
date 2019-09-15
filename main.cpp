@@ -5,7 +5,9 @@
 
 std::int16_t foo(void);
 std::int16_t bar(void);
-std::int16_t printer(void);
+std::int16_t printer1(void);
+std::int16_t printer2(void);
+std::int16_t printer3(void);
 
 scheduler<scheduling_algorithms::round_robin> os;
 
@@ -30,14 +32,29 @@ std::int16_t bar(void) {
 
 	while (1) {
 		P4OUT ^= BIT7;
+//		print("%u\n\r", os.get_thread_state().stack_usage);
 		q++;
+		os.sleep(2);
+	}
+}
+
+std::int16_t printer1(void) {
+	while (1) {
+		puts("printer2\n\r");
 		os.sleep(1);
 	}
 }
 
-std::int16_t printer(void) {
+std::int16_t printer2(void) {
 	while (1) {
-		puts("Hello, world!");
+		puts("printer2\n\r");
+		os.sleep(2);
+	}
+}
+
+std::int16_t printer3(void) {
+	while (1) {
+		puts("printer3\n\r");
 		os.sleep(4);
 	}
 }
@@ -79,13 +96,17 @@ int main(void)
 	initUART();
 
 	task x = task(foo, 32);
-	task y = task(bar, 32);
-	task z = task(printer, 128);
+	task y = task(bar, 128, 3);
+	task z = task(printer1, 128);
+	task a = task(printer2, 128);
+	task b = task(printer3, 128);
 
 	os.start({
 		std::move(x),
 		std::move(y),
 		std::move(z),
+		std::move(a),
+		std::move(b),
 	});
 	return 0;
 }

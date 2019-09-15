@@ -30,37 +30,7 @@ void initUART(void) {
  *     LCD display.
  **/
 void puts(char *s) {
-//	// block until tx buffer ready
-//	for (;;) {
-//		if (UCA1STAT & UCBUSY) os.block();
-//		else {
-//			os.unblock();
-//			break;
-//		}
-//	}
-//
-//	_disable_interrupt();
-//
-////	// send pointer to string data to message queue of ISR
-////	// isr increments pointer when ready
-//	isr_mailbox_retrieval ret = os.fetch_mailbox(USCI_A1_ISR);
-//	std::unordered_map<isr, std::queue<message>>::iterator tx_requests_ptr = ret.mailbox_ptr;
-//	std::queue<message> &tx_request_list = tx_requests_ptr->second;
-//
-//	message tx_request(&os.get_current_process(), nullptr, reinterpret_cast<void *>(s));
-//	tx_request_list.push(tx_request);
-//
-//	// start up transfer
-//	_enable_interrupt();
-//	UCA1IE |= UCTXIE;
-	_disable_interrupt();
-
-	for (char *p = s; *p != 0; p++) {
-		while (UCA1STAT & UCBUSY);
-		send_byte(*p);
-	}
-
-	_enable_interrupt();
+	for (char *p = s; *p != 0; p++) send_byte(*p);
 }
 /**
  * puts() is used by printf() to display or send a character. This function
@@ -76,6 +46,7 @@ void putc(unsigned b) {
  **/
 void send_byte(unsigned char byte)
 {
+	while (UCA1STAT & UCBUSY);
 	UCA1TXBUF = byte;
 }
 
@@ -86,7 +57,6 @@ void send_byte(unsigned char byte)
 #pragma vector = USCI_A1_VECTOR
 interrupt void USCI_A1_ISR(void) {
 	// switch to system stack pointer
-//	os.enter_kstack();
 	switch (__even_in_range(UCA1IV, 4)) {
 		case 0: { // Vector 0 - no interrupt
 			break;
@@ -97,32 +67,6 @@ interrupt void USCI_A1_ISR(void) {
 		}
 
 		case 4: { // Vector 4 - TXIFG
-			// fetch tx requests list from message queue
-			isr_mailbox_retrieval ret = os.fetch_mailbox(USCI_A1_ISR);
-
-			// retrieve the pointer to the entry and the actual list
-			std::unordered_map<isr, std::queue<message>>::iterator tx_requests_ptr = ret.mailbox_ptr;
-			std::queue<message> &tx_request_list = tx_requests_ptr->second;
-
-			// if empty then return immediately
-			if (tx_request_list.empty()) break;
-
-			// otherwise get the earliest tx request and the pointer to the current character to send
-			message &req = tx_request_list.front();
-			const char *tx_character_ptr = reinterpret_cast<const char *>(req.data_ptr);
-
-			// if we hit a null terminator, then this request has been served
-			if (*tx_character_ptr == 0) {
-				tx_request_list.pop();
-				UCA1IE &= ~UCTXIE;
-				break;
-			} else {
-				// otherwise move pointer forwards and send character
-				req.data_ptr = const_cast<void *>(reinterpret_cast<const void *>(tx_character_ptr + 1));
-
-				// send the character
-				send_byte(*tx_character_ptr);
-			}
 			break;
 		}
 

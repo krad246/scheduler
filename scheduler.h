@@ -24,19 +24,10 @@ enum class scheduling_algorithms {
 	lottery
 };
 
-using isr = void (*)(void);
-
-struct isr_mailbox_retrieval {
-	std::unordered_map<isr, std::queue<message>>::iterator mailbox_ptr;
-	std::int16_t ret_code;
-};
-
 class abstract_scheduler {
 public:
 	task *current_process = nullptr;
 	std::uint16_t kstack_ptr = 0x0000;
-
-	std::unordered_map<isr, std::queue<message>> isr_message_table = std::unordered_map<isr, std::queue<message>>();
 };
 
 template <scheduling_algorithms alg>
@@ -80,13 +71,12 @@ public:
 
 	task &schedule(void);
 
-	struct isr_mailbox_retrieval fetch_mailbox(isr caller);
-
 	inline task &get_current_process(void);
+	const thread_info &get_thread_state(void);
+
 	inline void sleep(std::size_t ticks);
 	inline void block(void);
 	inline void unblock(void);
-//	void sleep(std::size_t ticks);
 };
 
 template <scheduling_algorithms alg>
@@ -104,6 +94,11 @@ inline task &scheduler<alg>::get_current_process(void) {
 	return *this->current_process;
 }
 
+template <scheduling_algorithms alg>
+const thread_info &scheduler<alg>::get_thread_state(void) {
+	return this->get_current_process().get_state();
+}
+
 extern interrupt void USCI_A1_ISR(void);
 
 template <scheduling_algorithms alg>
@@ -113,9 +108,7 @@ void scheduler<alg>::start(void) {
 	}
 
 	WDTCTL = WDT_ADLY_16;
-	SFRIE1 |= WDTIE;
 
-	this->isr_message_table.insert(std::make_pair<isr, std::queue<message>>(reinterpret_cast<isr>(USCI_A1_ISR), std::queue<message>()));
 	this->schedule().load();
 }
 
@@ -161,57 +154,48 @@ extern __attribute__((naked, interrupt)) void bob(void);
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::sleep(const std::size_t ticks) {
 	this->current_process->sleep(ticks);
-	_low_power_mode_0();
+//	_low_power_mode_0();
 
 	// to optimize, instead of calling lpm0,
 	// push 2 dummy words then call the scheduler
 
-	//	const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
-	//	*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
-	//	*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
-	//
-	//	this->current_process->sleep(ticks);
-	//
-	//	// idle task stack gets messed up if this is uncommented ?
-	//	// improves latency of sleep activations though
-	//
-	////	// call the scheduler
-	//	bob();
+		const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
+		*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
+		*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
+
+		this->current_process->sleep(ticks);
+
+		// idle task stack gets messed up if this is uncommented ?
+		// improves latency of sleep activations though
+
+	//	// call the scheduler
+		bob();
 }
 
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::block(void) {
 	this->current_process->block();
-	_low_power_mode_0();
+//	_low_power_mode_0();
 
 	// to optimize, instead of calling lpm0,
 	// push 2 dummy words then call the scheduler
 
-	//	const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
-	//	*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
-	//	*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
-	//
-	//	this->current_process->sleep(ticks);
-	//
-	//	// idle task stack gets messed up if this is uncommented ?
-	//	// improves latency of sleep activations though
-	//
-	////	// call the scheduler
-	//	bob();
+		const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
+		*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
+		*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
+
+		this->current_process->sleep(ticks);
+
+		// idle task stack gets messed up if this is uncommented ?
+		// improves latency of sleep activations though
+
+	//	// call the scheduler
+		bob();
 }
 
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::unblock(void) {
 	this->current_process->unblock();
 }
-template <scheduling_algorithms alg>
-struct isr_mailbox_retrieval scheduler<alg>::fetch_mailbox(isr caller) {
-	std::unordered_map<isr, std::queue<message>>::iterator mailbox = this->isr_message_table.find(caller);
-	return (struct isr_mailbox_retrieval) {
-		.mailbox_ptr = mailbox,
-		.ret_code = (mailbox == this->isr_message_table.end() ? 0 : -1)
-	};
-}
-
 
 #endif /* SCHEDULER_H_ */

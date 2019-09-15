@@ -55,6 +55,8 @@ public:
 
 	inline std::uint16_t get_latest_sp(void) const;
 	inline std::uint8_t get_priority() const;
+	const thread_info &get_state(void) const;
+
 	inline bool sleeping(void) const;
 	inline bool blocking(void) const;
 
@@ -115,6 +117,8 @@ inline void task::update(void) {
 
 inline void task::block(void) {
 	this->info.blocking = true;
+
+	// add yourself to the blocking queue
 }
 
 inline void task::sleep(const std::size_t ticks) {
