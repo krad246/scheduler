@@ -20,7 +20,7 @@ std::int16_t foo(void) {
 	while (1) {
 		P1OUT ^= BIT0;
 		q++;
-		os.sleep(64);
+		os.sleep(2);
 	}
 }
 
@@ -34,28 +34,28 @@ std::int16_t bar(void) {
 		P4OUT ^= BIT7;
 		print("%u\n\r", os.get_thread_state().stack_usage);
 		q++;
-		os.sleep(32);
+		os.sleep(6);
 	}
 }
 
 std::int16_t printer1(void) {
 	while (1) {
 		puts("printer1\n\r");
-		os.sleep(1);
+		os.sleep(32);
 	}
 }
 
 std::int16_t printer2(void) {
 	while (1) {
 		puts("printer2\n\r");
-		os.sleep(2);
+		os.sleep(64);
 	}
 }
 
 std::int16_t printer3(void) {
 	while (1) {
 		puts("printer3\n\r");
-		os.sleep(4);
+		os.sleep(128);
 	}
 }
 
@@ -96,7 +96,7 @@ int main(void)
 	initUART();
 
 	task x = task(foo, 32);
-	task y = task(bar, 64, 3);
+	task y = task(bar, 64);
 	task z = task(printer1, 128);
 	task a = task(printer2, 128);
 	task b = task(printer3, 128);

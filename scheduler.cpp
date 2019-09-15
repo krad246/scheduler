@@ -45,7 +45,9 @@ task &base_scheduler<scheduling_algorithms::round_robin>::schedule(void) {
 }
 
 task &base_scheduler<scheduling_algorithms::lottery>::schedule(void) {
+	for (;;) {
 
+	}
 }
 
 base_scheduler<scheduling_algorithms::round_robin>::base_scheduler() {
