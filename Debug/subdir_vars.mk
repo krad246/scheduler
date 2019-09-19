@@ -11,6 +11,7 @@ CPP_SRCS += \
 ../main.cpp \
 ../print.cpp \
 ../scheduler.cpp \
+../scheduler_base.cpp \
 ../task.cpp 
 
 CMD_SRCS += \
@@ -22,6 +23,7 @@ OBJS += \
 ./main.obj \
 ./print.obj \
 ./scheduler.obj \
+./scheduler_base.obj \
 ./task.obj 
 
 CPP_DEPS += \
@@ -30,6 +32,7 @@ CPP_DEPS += \
 ./main.d \
 ./print.d \
 ./scheduler.d \
+./scheduler_base.d \
 ./task.d 
 
 OBJS__QUOTED += \
@@ -38,6 +41,7 @@ OBJS__QUOTED += \
 "main.obj" \
 "print.obj" \
 "scheduler.obj" \
+"scheduler_base.obj" \
 "task.obj" 
 
 CPP_DEPS__QUOTED += \
@@ -46,6 +50,7 @@ CPP_DEPS__QUOTED += \
 "main.d" \
 "print.d" \
 "scheduler.d" \
+"scheduler_base.d" \
 "task.d" 
 
 CPP_SRCS__QUOTED += \
@@ -53,6 +58,7 @@ CPP_SRCS__QUOTED += \
 "../functions.cpp" \
 "../print.cpp" \
 "../scheduler.cpp" \
+"../scheduler_base.cpp" \
 "../task.cpp" 
 
 
