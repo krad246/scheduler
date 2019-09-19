@@ -10,7 +10,6 @@
 #define SCHEDULER_H_
 
 #include <task.h>
-
 #include <vector>
 #include <type_traits>
 #include <initializer_list>
@@ -18,11 +17,7 @@
 #include <algorithm>
 #include <cstdarg>
 #include <unordered_map>
-
-enum class scheduling_algorithms {
-	round_robin,
-	lottery
-};
+#include <config.h>
 
 class abstract_scheduler {
 public:
@@ -41,10 +36,14 @@ public:
 	base_scheduler();
 	base_scheduler(const std::initializer_list<task> &task_list);
 
+	void add_task(const task &t);
+	void start(void);
+
 	std::vector<std::pair<task, std::uint8_t>> tasks;
 	std::vector<std::pair<task, std::uint8_t>>::iterator current_task_ptr;
 
 	task &schedule(void);
+	void cleanup(task &t);
 };
 
 template <>
@@ -60,6 +59,9 @@ public:
 	scheduler();
 	scheduler(const std::initializer_list<task> &task_list);
 
+	void add_task(const task &t);
+
+	void init(void);
 	void start(void);
 	void start(const std::initializer_list<task> &task_list);
 
@@ -74,14 +76,16 @@ public:
 	inline task &get_current_process(void);
 	const thread_info &get_thread_state(void);
 
-	inline void sleep(std::size_t ticks);
-	inline void block(void);
+	__attribute__((noinline)) void sleep(std::size_t ticks);
+	__attribute__((noinline)) void block(void);
 	inline void unblock(void);
+
+	void cleanup(task &t);
 };
 
 template <scheduling_algorithms alg>
 scheduler<alg>::scheduler() {
-	this->kstack_ptr = 0x0000;
+	base_scheduler<alg>::base_scheduler();
 }
 
 template <scheduling_algorithms alg>
@@ -106,10 +110,16 @@ void scheduler<alg>::start(void) {
 	if (this->tasks.size() == 0) {
 		// halt
 	}
+	base_scheduler<alg>::start();
+
+
 
 	WDTCTL = WDT_ADLY_16;
 
-	this->schedule().load();
+	task &first = this->schedule();
+	SFRIE1 |= WDTIE;
+
+	first.load();
 }
 
 template <scheduling_algorithms alg>
@@ -120,6 +130,26 @@ void scheduler<alg>::start(const std::initializer_list<task> &task_list) {
 
 	new (this) scheduler(task_list);
 	this->start();
+}
+
+template <scheduling_algorithms alg>
+void scheduler<alg>::add_task(const task &t) {
+	base_scheduler<alg>::add_task(t);
+}
+
+extern void driver_init(void);
+extern struct task_config task_cfgs[num_tasks_declared];
+
+template <scheduling_algorithms alg>
+void scheduler<alg>::init(void) {
+	_disable_interrupt();
+
+	driver_init();
+
+	struct task_config *end_pt = task_cfgs + sizeof(task_cfgs) / sizeof(struct task_config);
+	for (struct task_config *it = task_cfgs; it < end_pt; ++it) {
+		this->add_task(std::move(task(it->func, it->stack_size, it->priority)));
+	}
 }
 
 template <scheduling_algorithms alg>
@@ -134,6 +164,7 @@ inline void scheduler<alg>::leave_kstack(void) {
 
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::enter_kernel_mode(void) {
+	__disable_interrupt();
 	this->get_current_process().pause();
 	_set_SP_register(this->kstack_ptr);
 }
@@ -151,51 +182,51 @@ task &scheduler<alg>::schedule(void) {
 
 extern __attribute__((naked, interrupt)) void bob(void);
 
+
 template <scheduling_algorithms alg>
-inline void scheduler<alg>::sleep(const std::size_t ticks) {
+__attribute__((noinline)) void scheduler<alg>::sleep(const std::size_t ticks) {
+	__disable_interrupt();
+	// sleep saves pc
+
+	// put task to sleep
 	this->current_process->sleep(ticks);
-//	_low_power_mode_0();
 
-	// to optimize, instead of calling lpm0,
-	// push 2 dummy words then call the scheduler
+	// retrieve pc address and reformat for bra instruction
+	const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
+	*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
+	*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
 
-		const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
-		*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
-		*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
-
-		this->current_process->sleep(ticks);
-
-		// idle task stack gets messed up if this is uncommented ?
-		// improves latency of sleep activations though
-
-	//	// call the scheduler
-		bob();
+	// branch to isr and reschedule
+	bob();
 }
 
 template <scheduling_algorithms alg>
-inline void scheduler<alg>::block(void) {
+__attribute__((noinline)) void scheduler<alg>::block(void) {
+	// block saves pc
+
+	// put task to sleep / block
 	this->current_process->block();
-//	_low_power_mode_0();
 
-	// to optimize, instead of calling lpm0,
-	// push 2 dummy words then call the scheduler
+	// reformat pc address
+	const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
+	*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
+	*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
 
-		const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
-		*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
-		*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
-
-		this->current_process->sleep(ticks);
-
-		// idle task stack gets messed up if this is uncommented ?
-		// improves latency of sleep activations though
-
-	//	// call the scheduler
-		bob();
+	// call scheduler
+	bob();
 }
 
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::unblock(void) {
 	this->current_process->unblock();
+}
+
+template <scheduling_algorithms alg>
+void scheduler<alg>::cleanup(task &t) {
+	_disable_interrupt();
+
+	base_scheduler<alg>::cleanup(t);
+	this->leave_kernel_mode();
 }
 
 #endif /* SCHEDULER_H_ */

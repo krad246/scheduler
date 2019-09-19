@@ -13,6 +13,11 @@ task &base_scheduler<scheduling_algorithms::round_robin>::schedule(void) {
 
 	std::size_t num_avail = tasks.size();
 
+	if (num_avail == 0) {
+		this->current_process = &task::idle_hook;
+		return task::idle_hook;
+	}
+
 	for (;;) {
 		std::pair<task, std::uint8_t> &proc = *task_ptr;
 		task &t = proc.first;
@@ -51,7 +56,26 @@ task &base_scheduler<scheduling_algorithms::lottery>::schedule(void) {
 }
 
 base_scheduler<scheduling_algorithms::round_robin>::base_scheduler() {
+	this->tasks = std::vector<std::pair<task, std::uint8_t>>();
+	this->current_task_ptr = tasks.begin();
+	this->kstack_ptr = 0x0000;
+}
 
+void base_scheduler<scheduling_algorithms::round_robin>::start(void) {
+	this->current_task_ptr = tasks.begin();
+	this->kstack_ptr = _get_SP_register();
+}
+
+void base_scheduler<scheduling_algorithms::round_robin>::add_task(const task &t) {
+	this->tasks.emplace_back(std::move(std::make_pair(t, t.get_priority())));
+}
+
+void base_scheduler<scheduling_algorithms::round_robin>::cleanup(task &t) {
+	(void) t;
+
+	std::vector<std::pair<task, std::uint8_t>>::iterator task_to_remove = this->current_task_ptr;
+//	std::vector<std::pair<task, std::uint8_t>>::iterator new_task_ptr = std::copy(this->tasks.erase(task_to_remove));
+//	this->current_task_ptr = new_task_ptr;
 }
 
 base_scheduler<scheduling_algorithms::round_robin>::base_scheduler(const std::initializer_list<task> &task_list) {
@@ -66,4 +90,3 @@ base_scheduler<scheduling_algorithms::round_robin>::base_scheduler(const std::in
 
 	this->current_task_ptr = tasks.begin();
 }
-

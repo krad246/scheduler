@@ -6,13 +6,13 @@
  */
 
 #include <print.h>
+
 interrupt void USCI_A1_ISR(void);
-extern scheduler<scheduling_algorithms::round_robin> os;
 
 /**
  * Initializes the UART for 115200 baud with a RX interrupt
  **/
-void initUART(void) {
+void uart_init(void) {
 	  P4SEL |= BIT4 + BIT5;                       // P3.3,4 = USCI_A0 TXD/RXD
 	  UCA1CTL1 |= UCSWRST;                      // **Put state machine in reset**
 	  UCA1CTL1 |= UCSSEL_2;                     // SMCLK
@@ -24,27 +24,27 @@ void initUART(void) {
 }
 
 /**
- * puts() is used by printf() to display or send a string.. This function
+ * uart_puts() is used by printf() to display or send a string.. This function
  *     determines where printf prints to. For this case it sends a string
  *     out over UART, another option could be to display the string on an
  *     LCD display.
  **/
-void puts(char *s) {
-	for (char *p = s; *p != 0; p++) send_byte(*p);
+void uart_puts(char *s) {
+	for (char *p = s; *p != 0; p++) uart_send_byte(*p);
 }
 /**
- * puts() is used by printf() to display or send a character. This function
+ * uart_puts() is used by printf() to display or send a character. This function
  *     determines where printf prints to. For this case it sends a character
  *     out over UART.
  **/
-void putc(unsigned b) {
-	send_byte(b);
+void uart_putc(unsigned b) {
+	uart_send_byte(b);
 }
 
 /**
  * Sends a single byte out through UART
  **/
-void send_byte(unsigned char byte)
+void uart_send_byte(unsigned char byte)
 {
 	while (UCA1STAT & UCBUSY);
 	UCA1TXBUF = byte;
@@ -102,19 +102,19 @@ static void xtoa(unsigned long x, const unsigned long *dp) {
 			c = '0';
 			while (x >= d)
 				++c, x -= d;
-			putc(c);
+			uart_putc(c);
 		} while (!(d & 1));
 	} else
-		putc('0');
+		uart_putc('0');
 }
 
 static void puth(unsigned n) {
 	static const char hex[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
 			'9', 'A', 'B', 'C', 'D', 'E', 'F' };
-	putc(hex[n & 15]);
+	uart_putc(hex[n & 15]);
 }
 
-void print(char *format, ...)
+void uart_printf(char *format, ...)
 {
 	char c;
 	int i;
@@ -126,21 +126,21 @@ void print(char *format, ...)
 		if(c == '%') {
 			switch(c = *format++) {
 				case 's': // String
-					puts(va_arg(a, char*));
+					uart_puts(va_arg(a, char*));
 					break;
 				case 'c':// Char
-					putc(va_arg(a, char));
+					uart_putc(va_arg(a, char));
 				break;
 				case 'i':// 16 bit Integer
 				case 'u':// 16 bit Unsigned
 					i = va_arg(a, int);
-					if(c == 'i' && i < 0) i = -i, putc('-');
+					if(c == 'i' && i < 0) i = -i, uart_putc('-');
 					xtoa((unsigned)i, dv + 5);
 				break;
 				case 'l':// 32 bit Long
 				case 'n':// 32 bit uNsigned loNg
 					n = va_arg(a, long);
-					if(c == 'l' && n < 0) n = -n, putc('-');
+					if(c == 'l' && n < 0) n = -n, uart_putc('-');
 					xtoa((unsigned long)n, dv);
 				break;
 				case 'x':// 16 bit heXadecimal
@@ -154,7 +154,7 @@ void print(char *format, ...)
 				default: goto bad_fmt;
 			}
 		} else
-			bad_fmt: putc(c);
+			bad_fmt: uart_putc(c);
 	}
 	va_end(a);
 }

@@ -8,16 +8,14 @@
 #ifndef PRINT_H_
 #define PRINT_H_
 
-#include <scheduler.h>
-
 #include <msp430.h>
 #include <cstdarg>
 
-void putc(unsigned);
-void puts(char *);
-void send_byte(unsigned char byte);
-void print(char *format, ...);
+void uart_putc(unsigned);
+void uart_puts(char *);
+void uart_send_byte(unsigned char byte);
+void uart_printf(char *format, ...);
 
-void initUART();
+void uart_init(void);
 
 #endif /* PRINT_H_ */

@@ -14,18 +14,11 @@
 #include <cstdint>
 
 #include <memory>
-#include <queue>
+#include <string>
 
-class task;
-
-struct message {
-	message(const task *src, const task *target, void *data);
-
-	std::int16_t (*sender)(void) = nullptr;
-	std::int16_t (*receiver)(void) = nullptr;
-
-	void *data_ptr = nullptr;
-};
+/**
+ * Resource monitoring struct for task
+ */
 
 struct thread_info {
 	std::uint8_t priority;
@@ -37,115 +30,108 @@ struct thread_info {
 	std::size_t sleep_ticks;
 
 	bool blocking;
+
+	const std::string to_string(void);
 };
+
+/**
+ * Task class representing a process with its own address space, resource monitor, and runnable
+ */
 
 class task {
 public:
+
+	/**
+	 * Constructors for scheduler data structure management
+	 */
+
 	task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t priority = 1);
-	explicit task(const task &other);
-	task(task &&other);
+	task(const task &other);
 
-	inline void pause(void);
-	inline void load(void);
+	/**
+	 * Context switching functions
+	 */
 
-	inline void update(void);
-	inline void sleep(const std::size_t ticks);
-	inline void block(void);
-	inline void unblock(void);
+	__attribute__((always_inline)) inline void pause(void);
+	void load(void);
 
-	inline std::uint16_t get_latest_sp(void) const;
-	inline std::uint8_t get_priority() const;
+	/**
+	 * Scheduling state management functions
+	 */
+
+	void update(void);
+	void sleep(const std::size_t ticks);
+	void block(void);
+	void unblock(void);
+
+	/**
+	 * State information retrieval functions
+	 */
+
+	std::uint16_t get_latest_sp(void) const;
+	std::uint8_t get_priority() const;
 	const thread_info &get_state(void) const;
+	bool sleeping(void) const;
+	bool blocking(void) const;
 
-	inline bool sleeping(void) const;
-	inline bool blocking(void) const;
+	/**
+	 * Idle hook which is called when no tasks are available to run
+	 */
 
 	static std::int16_t idle(void);
 	static task idle_hook;
 
 private:
-	friend class message;
+
+	/**
+	 * Auto-managed resizable user stack / heap / address space
+	 */
 
 	std::unique_ptr<std::uint16_t []> ustack;
+
+	/**
+	 * Thread context block
+	 */
+
 	std::jmp_buf context;
 
+	/**
+	 * Resource monitor struct
+	 */
+
 	thread_info info;
-	std::queue<message> messages;
+
+	/**
+	 * Pointer to process function
+	 */
 
 	std::int16_t (*runnable)(void) = nullptr;
 };
 
-#pragma FUNC_ALWAYS_INLINE
-inline void task::pause(void) {
-	__disable_interrupt();
+/**
+ * Thread context switching function which saves current task context and performs stack modification to
+ * realign stack after an interrupt
+ */
 
-	// save context
+__attribute__((always_inline)) inline void task::pause(void) {
+
+	// Save task context
 	setjmp(this->context);
 
-	// must unroll pushed interrupt registers
-	// place pc value in slot 8 and unrolled sp in slot 7
+	/**
+	 * Interrupt pushes PC + SR to stack, must retrieve them, store them in the TCB and unroll the stack
+	 */
 
-	// grab upper byte of program counter
+	// Fetches bytes of pushed PC words
 	const register std::uint16_t *stack_top = reinterpret_cast<std::uint16_t *>(__get_SP_register());
 	const register std::uint16_t top_bits = (*(stack_top) & 0xF000) >> 12;
 
-	// roll back stack pointer to deallocate interrupt words
+	// Rolls back stack to deallocate words
 	__set_SP_register(__get_SP_register() + 4);
 
-	// combine upper byte of pc with rest of pc and put correct stack pointer in context block
+	// Writes pushed PC from interrupt into TCB as pointer to next normal instruction and SP for proper SP location
 	this->context[8] = static_cast<std::uint32_t>(top_bits) << 16 | *(stack_top + 1);
 	this->context[7] = __get_SP_register();
 }
-
-#pragma FUNC_ALWAYS_INLINE
-inline void task::load(void) {
-	// increase run count
-	this->info.ticks++;
-
-	//
-//	__enable_interrupt();
-	SFRIE1 |= WDTIE;
-	longjmp(this->context, 1);
-}
-
-inline void task::update(void) {
-	if (this->info.sleep_ticks > 0) {
-		this->info.sleep_ticks--;
-	}
-
-	this->info.stack_usage = this->ustack.get() + this->info.stack_size - reinterpret_cast<std::uint16_t *>(this->get_latest_sp()); // is this working?
-}
-
-inline void task::block(void) {
-	this->info.blocking = true;
-
-	// add yourself to the blocking queue
-}
-
-inline void task::sleep(const std::size_t ticks) {
-	__disable_interrupt();
-	this->info.sleep_ticks = ticks;
-}
-
-inline void task::unblock(void) {
-	this->info.blocking = false;
-}
-
-inline std::uint16_t task::get_latest_sp(void) const {
-	return this->context[7];
-}
-
-inline std::uint8_t task::get_priority() const {
-	return this->info.priority;
-}
-
-inline bool task::sleeping(void) const {
-	return this->info.sleep_ticks > 0;
-}
-
-inline bool task::blocking(void) const {
-	return this->info.blocking;
-}
-
 
 #endif /* TASK_H_ */
