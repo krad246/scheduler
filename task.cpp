@@ -107,7 +107,7 @@ void task::update(void) {
 }
 
 /**
- * Function that reenables scheduler control
+ * Function that reenables scheduler control and updates resource monitors
  */
 
 void task::refresh(void) {

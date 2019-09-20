@@ -110,15 +110,19 @@ inline void scheduler<alg>::context_switch(void) {
 	this->save_context();	// Save current task context
 	this->enter_kstack();	// Switch to the OS stack
 
-	if (this->get_current_process().blocking()) {
-		this->isr_wait_queue.pop_back();
-	}
-
 	/**
 	 * Check if any interrupts need to be serviced, an interrupt callback that has completed must deschedule itself
 	 */
 
 	if (this->isr_wait_queue.size() > 0) {
+
+		/**
+		 * If there are ISRs waiting on the queue and the most recently executed ISR has returned, then remove it
+		 */
+
+		if (this->get_current_process().blocking()) {
+			this->isr_wait_queue.pop_back();
+		}
 
 		/**
 		 * Fetch the driver that needs to be run the soonest and mark it as active, then enter it
