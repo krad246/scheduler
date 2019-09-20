@@ -16,15 +16,16 @@ extern scheduler<scheduling_algorithms::round_robin> os;
 
 #pragma vector = USCI_A1_VECTOR
 __attribute__((interrupt)) void USCI_A1_ISR(void) {
+
+	auto old_sp = os.enter_kstack();
+
 	switch (__even_in_range(UCA1IV, 4)) {
 		case 0: { // Vector 0 - no interrupt
 			break;
 		}
 
 		case 2: { // Vector 2 - RXIFG
-//			os.enter_kstack();
 			os.schedule_interrupt(USCI_A1_ISR);
-//			os.leave_kstack();
 			break;
 		}
 
@@ -36,6 +37,8 @@ __attribute__((interrupt)) void USCI_A1_ISR(void) {
 			break;
 		}
 	}
+
+	os.leave_kstack(old_sp);
 }
 
 std::int16_t uart_task(void) {

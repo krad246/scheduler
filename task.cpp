@@ -107,6 +107,18 @@ void task::update(void) {
 }
 
 /**
+ * Function that reenables scheduler control
+ */
+
+void task::refresh(void) {
+	_enable_interrupt();
+
+#ifdef DEBUG_MODE
+	this->info.stack_usage = this->ustack.get() + this->info.stack_size - reinterpret_cast<std::uint16_t *>(_get_SP_register());
+#endif
+}
+
+/**
  * Updates sleep counter on task
  * @param ticks - number of ticks to wait before reeawakening task
  */

@@ -106,8 +106,5 @@ extern scheduler<scheduling_algorithms::round_robin> os;
 
 #pragma vector = WDT_VECTOR
 __attribute__((naked, interrupt)) void abstract_scheduler::preempt(void) {
-//	os.enter_kernel_mode();
-//	os.leave_kernel_mode();
-//	_disable_interrupt();
 	os.context_switch();
 }

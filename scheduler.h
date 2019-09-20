@@ -61,16 +61,19 @@ public:
 	inline void context_switch(void);
 	inline void save_context(void);
 	inline void restore_context(task &runnable);
-//	inline void enter_kernel_mode(void);
-//	inline void leave_kernel_mode(void);
-	inline void enter_kstack(void);
-	inline void leave_kstack(void);
+	inline std::uint32_t enter_kstack(void);
+	inline void leave_kstack(const std::uint32_t sp);
 
 	/**
 	 * Function that actually schedules a new task
 	 */
 
 	task &schedule(void);
+
+	/**
+	 * Update state during application execution
+	 */
+	void refresh(void);
 
 	/**
 	 * Returns the current process or the resource monitor for that process
@@ -85,7 +88,13 @@ public:
 
 	__attribute__((noinline)) void sleep(std::size_t ticks);
 	__attribute__((noinline)) void block(void);
-	inline void unblock(void);
+
+	/**
+	 * Functions that reawaken tasks or allow scheduler control again
+	 */
+
+
+	void unblock(void);
 };
 
 #include <scheduler.cpp>

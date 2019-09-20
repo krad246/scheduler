@@ -52,7 +52,7 @@ struct task_config task_cfgs[num_tasks_declared] = {
 		{
 				.func = fib,
 				.stack_size = 32,
-				.priority = 7,
+				.priority = 1,
 
 		}
 };

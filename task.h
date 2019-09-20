@@ -67,6 +67,7 @@ public:
 	 * Scheduling state management functions
 	 */
 
+	void refresh(void);
 	void update(void);
 	void sleep(const std::size_t ticks);
 	void block(void);

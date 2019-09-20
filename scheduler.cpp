@@ -77,10 +77,6 @@ void scheduler<alg>::init(void) {
 
 template <scheduling_algorithms alg>
 void scheduler<alg>::start(void) {
-//	if (this->tasks.size() == 0) {
-//		// halt
-//	}
-
 	// Perform any additional initializations, if needed, in the superclass
 	base_scheduler<alg>::start();
 
@@ -99,10 +95,6 @@ void scheduler<alg>::start(void) {
 
 template <scheduling_algorithms alg>
 void scheduler<alg>::start(const std::initializer_list<task> &task_list) {
-//	if (task_list.size() == 0) {
-//		// halt
-//	}
-
 	// Construct the OS with the task list, then start it
 	new (this) scheduler(task_list);
 	this->start();
@@ -165,8 +157,10 @@ inline void scheduler<alg>::restore_context(task &runnable) {
  */
 
 template <scheduling_algorithms alg>
-inline void scheduler<alg>::enter_kstack(void) {
+inline std::uint32_t scheduler<alg>::enter_kstack(void) {
+	register std::uint32_t sp_backup = _get_SP_register();
 	_set_SP_register(this->kstack_ptr);
+	return sp_backup;
 }
 
 /**
@@ -174,8 +168,8 @@ inline void scheduler<alg>::enter_kstack(void) {
  */
 
 template <scheduling_algorithms alg>
-inline void scheduler<alg>::leave_kstack(void) {
-	_set_SP_register(this->get_current_process().get_latest_sp());
+inline void scheduler<alg>::leave_kstack(const std::uint32_t new_sp) {
+	_set_SP_register(new_sp);
 }
 
 /**
@@ -205,18 +199,10 @@ const thread_info &scheduler<alg>::get_thread_state(void) {
 	return this->get_current_process().get_state();
 }
 
-
-//template <scheduling_algorithms alg>
-//inline void scheduler<alg>::enter_kernel_mode(void) {
-//	__disable_interrupt();
-//	this->get_current_process().pause();
-//	this->enter_kstack();
-//}
-
-//template <scheduling_algorithms alg>
-//inline void scheduler<alg>::leave_kernel_mode(void) {
-//	this->schedule().load();
-//}
+template <scheduling_algorithms alg>
+void scheduler<alg>::refresh(void) {
+	this->get_current_process().refresh();
+}
 
 /**
  * Puts a task to sleep on a timer and performs stack manipulation to correctly transfer control to the scheduler
