@@ -14,18 +14,26 @@
 #include <cstdlib>
 #include <cstddef>
 
+#include <algorithm>
 #include <vector>
 #include <utility>
 #include <initializer_list>
+#include <queue>
+#include <unordered_map>
 
 /**
  * Base instance of all schedulers - all schedulers share this
  */
 
+using isr = void (*)(void);
+
 class abstract_scheduler {
 public:
 	// Scheduler tick interrupt
 	static __attribute__((interrupt)) void preempt(void);
+
+	void attach_interrupt(void (*isr)(void), const task &driver_func);
+	void schedule_interrupt(void (*isr)(void));
 
 protected:
 	// Pointer to current process
@@ -33,6 +41,12 @@ protected:
 
 	// Pointer to top of OS-reserved stack
 	std::uint16_t kstack_ptr = 0x0000;
+
+	// Queue of interrupts waiting to be scheduled
+	std::vector<task> isr_wait_queue;
+
+	// Hash table mapping interrupt to associated task
+	std::unordered_map<isr, task> isr_vec_table;
 };
 
 /**
@@ -47,7 +61,7 @@ template <scheduling_algorithms alg> class base_scheduler { };
  */
 
 template <>
-class base_scheduler<scheduling_algorithms::round_robin> : protected abstract_scheduler {
+class base_scheduler<scheduling_algorithms::round_robin> : public abstract_scheduler {
 public:
 
 	/**
@@ -79,7 +93,7 @@ protected:
  */
 
 template <>
-class base_scheduler<scheduling_algorithms::lottery> : protected abstract_scheduler {
+class base_scheduler<scheduling_algorithms::lottery> : public abstract_scheduler {
 private:
 
 	task &schedule(void);

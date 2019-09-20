@@ -8,6 +8,16 @@
 #include <scheduler_base.h>
 #include <scheduler.h>
 
+void abstract_scheduler::attach_interrupt(void (*isr)(void), const task &driver_func) {
+	this->isr_vec_table.emplace(std::make_pair(isr, driver_func));
+}
+
+void abstract_scheduler::schedule_interrupt(void (*isr)(void)) {
+	auto driver_ptr = this->isr_vec_table.find(isr);
+	this->isr_wait_queue.push_back(driver_ptr->second);
+	std::push_heap(this->isr_wait_queue.begin(), this->isr_wait_queue.end(), cmp_isr_deadline());
+}
+
 base_scheduler<scheduling_algorithms::round_robin>::base_scheduler() {
 	this->tasks = std::vector<std::pair<task, std::uint8_t>>();
 	this->current_task_ptr = tasks.begin();
@@ -69,7 +79,7 @@ task &base_scheduler<scheduling_algorithms::round_robin>::schedule(void) {
 			}
 		} else {
 			num_avail--;
-			proc.second = t.get_priority();
+//			proc.second = t.get_priority();
 			t.update();
 		}
 

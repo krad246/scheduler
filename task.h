@@ -16,6 +16,8 @@
 #include <memory>
 #include <string>
 
+class task;
+
 /**
  * Resource monitoring struct for task
  */
@@ -46,7 +48,13 @@ public:
 	 */
 
 	task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t priority = 1);
+
+	/**
+	 * Copy-ish constructors
+	 */
+
 	task(const task &other);
+	task &operator=(const task&other);
 
 	/**
 	 * Context switching functions
@@ -82,6 +90,7 @@ public:
 	static task idle_hook;
 
 private:
+	friend struct cmp_isr_deadline;
 
 	/**
 	 * Auto-managed resizable user stack / heap / address space
@@ -106,6 +115,16 @@ private:
 	 */
 
 	std::int16_t (*runnable)(void) = nullptr;
+};
+
+/**
+ * Comparator function for interrupt tasks, allows the wait queue to pick the minimum latency interrupt to handle
+ */
+
+struct cmp_isr_deadline {
+	bool operator()(const task &t1, const task &t2) {
+		return t1.info.priority > t2.info.priority;
+	}
 };
 
 /**

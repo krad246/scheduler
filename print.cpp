@@ -6,63 +6,25 @@
  */
 
 #include <print.h>
+#include <scheduler.h>
 
-interrupt void USCI_A1_ISR(void);
-
-/**
- * Initializes the UART for 115200 baud with a RX interrupt
- **/
-void uart_init(void) {
-	  P4SEL |= BIT4 + BIT5;                       // P3.3,4 = USCI_A0 TXD/RXD
-	  UCA1CTL1 |= UCSWRST;                      // **Put state machine in reset**
-	  UCA1CTL1 |= UCSSEL_2;                     // SMCLK
-	  UCA1BR0 = 9;                              // 1MHz 115200 (see User's Guide)
-	  UCA1BR1 = 0;                              // 1MHz 115200
-	  UCA1MCTL |= UCBRS_1 + UCBRF_0;            // Modulation UCBRSx=1, UCBRFx=0
-	  UCA1CTL1 &= ~UCSWRST;                     // **Initialize USCI state machine**
-	  UCA1IE |= UCRXIE;                         // Enable USCI_A0 RX interrupt
-}
-
-/**
- * uart_puts() is used by printf() to display or send a string.. This function
- *     determines where printf prints to. For this case it sends a string
- *     out over UART, another option could be to display the string on an
- *     LCD display.
- **/
-void uart_puts(char *s) {
-	for (char *p = s; *p != 0; p++) uart_send_byte(*p);
-}
-/**
- * uart_puts() is used by printf() to display or send a character. This function
- *     determines where printf prints to. For this case it sends a character
- *     out over UART.
- **/
-void uart_putc(unsigned b) {
-	uart_send_byte(b);
-}
-
-/**
- * Sends a single byte out through UART
- **/
-void uart_send_byte(unsigned char byte)
-{
-	while (UCA1STAT & UCBUSY);
-	UCA1TXBUF = byte;
-}
+extern scheduler<scheduling_algorithms::round_robin> os;
 
 /**
  * Interrupt routine for receiving a character over UART
  **/
-// Echo back RXed character, confirm TX buffer is ready first
+
 #pragma vector = USCI_A1_VECTOR
-interrupt void USCI_A1_ISR(void) {
-	// switch to system stack pointer
+__attribute__((interrupt)) void USCI_A1_ISR(void) {
 	switch (__even_in_range(UCA1IV, 4)) {
 		case 0: { // Vector 0 - no interrupt
 			break;
 		}
 
 		case 2: { // Vector 2 - RXIFG
+//			os.enter_kstack();
+			os.schedule_interrupt(USCI_A1_ISR);
+//			os.leave_kstack();
 			break;
 		}
 
@@ -74,6 +36,55 @@ interrupt void USCI_A1_ISR(void) {
 			break;
 		}
 	}
+}
+
+std::int16_t uart_task(void) {
+	while (1) {
+		uart_printf("%s", "got character\n\r");
+		os.block();
+	}
+}
+
+/**
+ * Initializes the UART for 115200 baud with a RX interrupt
+ **/
+
+void uart_init(void) {
+	  P4SEL |= BIT4 + BIT5;                     // P3.3,4 = USCI_A0 TXD/RXD
+	  UCA1CTL1 |= UCSWRST;                      // Put state machine in reset
+	  UCA1CTL1 |= UCSSEL_2;                     // SMCLK
+	  UCA1BR0 = 9;                              // 1MHz 115200 (see User's Guide)
+	  UCA1BR1 = 0;                              // 1MHz 115200
+	  UCA1MCTL |= UCBRS_1 + UCBRF_0;            // Modulation UCBRSx=1, UCBRFx=0
+	  UCA1CTL1 &= ~UCSWRST;                     // Initialize USCI state machine
+	  UCA1IE |= UCRXIE;                         // Enable USCI_A0 RX interrupt
+
+	  os.attach_interrupt(USCI_A1_ISR, task(uart_task, 32));
+}
+
+/**
+ * uart_puts() is used by printf() to display or send a string
+ **/
+
+void uart_puts(char *s) {
+	for (char *p = s; *p != 0; p++) uart_send_byte(*p);
+}
+
+/**
+ * uart_puts() is used by printf() to display or send a character
+ **/
+
+void uart_putc(unsigned b) {
+	uart_send_byte(b);
+}
+
+/**
+ * Sends a single byte out through UART
+ **/
+
+void uart_send_byte(unsigned char byte) {
+	while (UCA1STAT & UCBUSY);
+	UCA1TXBUF = byte;
 }
 
 static const unsigned long dv[] = {
@@ -122,9 +133,9 @@ void uart_printf(char *format, ...)
 
 	va_list a;
 	va_start(a, format);
-	while(c = *format++) {
-		if(c == '%') {
-			switch(c = *format++) {
+	while (c = *format++) {
+		if (c == '%') {
+			switch (c = *format++) {
 				case 's': // String
 					uart_puts(va_arg(a, char*));
 					break;
@@ -134,13 +145,13 @@ void uart_printf(char *format, ...)
 				case 'i':// 16 bit Integer
 				case 'u':// 16 bit Unsigned
 					i = va_arg(a, int);
-					if(c == 'i' && i < 0) i = -i, uart_putc('-');
+					if (c == 'i' && i < 0) i = -i, uart_putc('-');
 					xtoa((unsigned)i, dv + 5);
 				break;
 				case 'l':// 32 bit Long
 				case 'n':// 32 bit uNsigned loNg
 					n = va_arg(a, long);
-					if(c == 'l' && n < 0) n = -n, uart_putc('-');
+					if (c == 'l' && n < 0) n = -n, uart_putc('-');
 					xtoa((unsigned long)n, dv);
 				break;
 				case 'x':// 16 bit heXadecimal

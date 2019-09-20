@@ -13,20 +13,18 @@
 #include <task.h>
 #include <scheduler_base.h>
 
-#include <vector>
-#include <type_traits>
-#include <initializer_list>
-#include <utility>
-#include <algorithm>
 #include <cstdarg>
-#include <unordered_map>
+
+#include <vector>
+#include <initializer_list>
+#include <algorithm>
 
 /**
  * Outward-facing scheduler interface - this is meant for use
  */
 
 template <scheduling_algorithms alg>
-class scheduler : protected base_scheduler<alg> {
+class scheduler : public base_scheduler<alg> {
 public:
 
 	/**

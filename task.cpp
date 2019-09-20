@@ -74,6 +74,15 @@ task::task(const task &other) {
 }
 
 /**
+ * Constructs task from another instance using placement-new
+ */
+
+task &task::operator=(const task &other) {
+	new (this) task(other.runnable, other.info.stack_size, other.info.priority);
+	return *this;
+}
+
+/**
  * Context switching function which activates a new process
  */
 
