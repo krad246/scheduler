@@ -122,16 +122,18 @@ inline void scheduler<alg>::context_switch(void) {
 
 		if (this->get_current_process().blocking()) {
 			this->isr_wait_queue.pop_back();
-		}
+			task &runnable = this->schedule();	// Determine the next process to run
+			this->restore_context(runnable);	// Select that process and load it
+		} else {
 
 		/**
 		 * Fetch the driver that needs to be run the soonest and mark it as active, then enter it
 		 */
-
-		std::pop_heap(this->isr_wait_queue.begin(), this->isr_wait_queue.end(), cmp_isr_deadline());
-		task &driver_handler = this->isr_wait_queue.back();
-		this->current_process = &driver_handler;
-		this->restore_context(driver_handler);
+			std::pop_heap(this->isr_wait_queue.begin(), this->isr_wait_queue.end(), cmp_isr_deadline());
+			task &driver_handler = this->isr_wait_queue.back();
+			this->current_process = &driver_handler;
+			this->restore_context(driver_handler);
+		}
 	} else {
 		task &runnable = this->schedule();	// Determine the next process to run
 		this->restore_context(runnable);	// Select that process and load it

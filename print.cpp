@@ -26,6 +26,7 @@ __attribute__((interrupt)) void USCI_A1_ISR(void) {
 
 		case 2: { // Vector 2 - RXIFG
 			os.schedule_interrupt(USCI_A1_ISR);
+			UCA1IFG &= ~UCRXIFG;
 			break;
 		}
 
