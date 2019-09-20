@@ -10,6 +10,7 @@ CPP_SRCS += \
 ../functions.cpp \
 ../main.cpp \
 ../print.cpp \
+../ring_buffer.cpp \
 ../scheduler.cpp \
 ../scheduler_base.cpp \
 ../task.cpp 
@@ -22,6 +23,7 @@ OBJS += \
 ./functions.obj \
 ./main.obj \
 ./print.obj \
+./ring_buffer.obj \
 ./scheduler.obj \
 ./scheduler_base.obj \
 ./task.obj 
@@ -31,6 +33,7 @@ CPP_DEPS += \
 ./functions.d \
 ./main.d \
 ./print.d \
+./ring_buffer.d \
 ./scheduler.d \
 ./scheduler_base.d \
 ./task.d 
@@ -40,6 +43,7 @@ OBJS__QUOTED += \
 "functions.obj" \
 "main.obj" \
 "print.obj" \
+"ring_buffer.obj" \
 "scheduler.obj" \
 "scheduler_base.obj" \
 "task.obj" 
@@ -49,6 +53,7 @@ CPP_DEPS__QUOTED += \
 "functions.d" \
 "main.d" \
 "print.d" \
+"ring_buffer.d" \
 "scheduler.d" \
 "scheduler_base.d" \
 "task.d" 
@@ -57,6 +62,7 @@ CPP_SRCS__QUOTED += \
 "../config.cpp" \
 "../functions.cpp" \
 "../print.cpp" \
+"../ring_buffer.cpp" \
 "../scheduler.cpp" \
 "../scheduler_base.cpp" \
 "../task.cpp" 

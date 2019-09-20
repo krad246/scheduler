@@ -110,6 +110,9 @@ functions.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcx
 functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.cpp
 functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.h
 functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/print.h
+functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h
+functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.cpp
+functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h
 
 ../functions.cpp: 
 C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.h: 
@@ -221,3 +224,6 @@ C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/cstdarg:
 C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.cpp: 
 C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.h: 
 C:/Users/krad2/workspace_v8/f5529_kernel/print.h: 
+C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h: 
+C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.cpp: 
+C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h: 
