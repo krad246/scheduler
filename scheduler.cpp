@@ -109,32 +109,13 @@ inline void scheduler<alg>::context_switch(void) {
 	__disable_interrupt();	// Enter critical section
 	this->save_context();	// Save current task context
 	this->enter_kstack();	// Switch to the OS stack
+	this->service_interrupts(); // Service interrupts
 
-	/**
-	 * Check if any interrupts need to be serviced, an interrupt callback that has completed must deschedule itself
-	 */
-
-	if (this->isr_wait_queue.size() > 0) {
-
-		/**
-		 * If there are ISRs waiting on the queue and the most recently executed ISR has returned, then remove it
-		 */
-
-		if (this->get_current_process().blocking()) {
-			this->isr_wait_queue.pop_back();
-			task &runnable = this->schedule();	// Determine the next process to run
-			this->restore_context(runnable);	// Select that process and load it
-		} else {
-
-		/**
-		 * Fetch the driver that needs to be run the soonest and mark it as active, then enter it
-		 */
-			std::pop_heap(this->isr_wait_queue.begin(), this->isr_wait_queue.end(), cmp_isr_deadline());
-			task &driver_handler = this->isr_wait_queue.back();
-			this->current_process = &driver_handler;
-			this->restore_context(driver_handler);
-		}
-	} else {
+	if (this->isr_sched_queue.size() > 0) {	// If any interrupts available to be handled, handle them instead
+		task &driver_handler = const_cast<task &>(this->isr_sched_queue.top());
+		this->current_process = &driver_handler;
+		this->restore_context(driver_handler);
+	} else {	// Else handle normal processes
 		task &runnable = this->schedule();	// Determine the next process to run
 		this->restore_context(runnable);	// Select that process and load it
 	}
@@ -259,9 +240,9 @@ __attribute__((noinline)) void scheduler<alg>::block(void) {
  */
 
 template <scheduling_algorithms alg>
-void scheduler<alg>::unblock(void) {
+void scheduler<alg>::unblock(task &target) {
 	_disable_interrupt();	// Enter critical section
-	this->current_process->unblock();
+	target.unblock();
 	_enable_interrupt();	// Exits critical section
 }
 

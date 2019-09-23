@@ -94,7 +94,7 @@ public:
 	 */
 
 
-	void unblock(void);
+	void unblock(task &target);
 };
 
 #include <scheduler.cpp>

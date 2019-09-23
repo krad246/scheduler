@@ -10,6 +10,8 @@
 
 extern scheduler<scheduling_algorithms::round_robin> os;
 
+ring_buffer<char> rx_fifo(32);
+
 /**
  * Interrupt routine for receiving a character over UART
  **/
@@ -25,7 +27,11 @@ __attribute__((interrupt)) void USCI_A1_ISR(void) {
 		}
 
 		case 2: { // Vector 2 - RXIFG
-			os.schedule_interrupt(USCI_A1_ISR);
+			rx_fifo.put(UCA1RXBUF);
+			if (rx_fifo.full()) {
+				os.schedule_interrupt(USCI_A1_ISR);
+			}
+
 			UCA1IFG &= ~UCRXIFG;
 			break;
 		}
@@ -44,7 +50,12 @@ __attribute__((interrupt)) void USCI_A1_ISR(void) {
 
 std::int16_t uart_task(void) {
 	while (1) {
-		uart_printf("%s", "got character\n\r");
+		os.refresh();
+		uart_printf("%s", "got characters\n\r");
+		while (!rx_fifo.empty()) {
+			uart_putc(rx_fifo.get());
+		}
+
 		os.block();
 	}
 }

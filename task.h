@@ -90,8 +90,15 @@ public:
 	static std::int16_t idle(void);
 	static task idle_hook;
 
+	/**
+	 * Comparator function for interrupt tasks, allows the wait queue to pick the most important interrupt to handle
+	 */
+
+	friend bool operator<(const task &t1, const task &t2) {
+		return t1.info.priority > t2.info.priority;
+	}
+
 private:
-	friend struct cmp_isr_deadline;
 
 	/**
 	 * Auto-managed resizable user stack / heap / address space
@@ -118,15 +125,6 @@ private:
 	std::int16_t (*runnable)(void) = nullptr;
 };
 
-/**
- * Comparator function for interrupt tasks, allows the wait queue to pick the minimum latency interrupt to handle
- */
-
-struct cmp_isr_deadline {
-	bool operator()(const task &t1, const task &t2) {
-		return t1.info.priority > t2.info.priority;
-	}
-};
 
 /**
  * Thread context switching function which saves current task context and performs stack modification to

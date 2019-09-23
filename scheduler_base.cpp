@@ -23,9 +23,27 @@ void abstract_scheduler::attach_interrupt(void (*isr)(void), const task &driver_
  */
 
 void abstract_scheduler::schedule_interrupt(void (*isr)(void)) {
-	auto driver_ptr = this->isr_vec_table.find(isr);	// Find the task corresponding to the ISR just executed
-	this->isr_wait_queue.push_back(driver_ptr->second);	// Push it to the waiting queue
-	std::push_heap(this->isr_wait_queue.begin(), this->isr_wait_queue.end(), cmp_isr_deadline());	// Sort by earliest deadline
+	this->isr_wait_queue.push_back(isr);	// Simple numeric copy is faster
+}
+
+/**
+ * Handles interrupt decision-making in the scheduler
+ */
+
+void abstract_scheduler::service_interrupts(void) {
+	// If any interrupt handlers have completed in some way then remove them
+	while (this->isr_sched_queue.size() > 0 && (this->isr_sched_queue.top().blocking() || this->isr_sched_queue.top().sleeping())) {
+		this->isr_sched_queue.pop();
+	}
+
+	if (this->isr_wait_queue.size() > 0) {	// If any new interrupts were receieved, push the corresponding tasks to the scheduler queue
+		for (std::vector<isr>::iterator it = this->isr_wait_queue.begin(); it != this->isr_wait_queue.end(); ++it) {
+			auto driver_ptr = this->isr_vec_table.find(*it);	// Find the task corresponding to the ISR just executed
+			this->isr_sched_queue.emplace(driver_ptr->second);	// Push it to the waiting queue
+		}
+
+		this->isr_wait_queue.clear();	// Clear the wait queue because these were registered
+	}
 }
 
 /**

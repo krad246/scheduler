@@ -10,6 +10,7 @@
 
 #include <task.h>
 #include <config.h>
+#include <stable_priority_queue.h>
 
 #include <cstdlib>
 #include <cstddef>
@@ -34,6 +35,7 @@ public:
 
 	void attach_interrupt(void (*isr)(void), const task &driver_func);
 	void schedule_interrupt(void (*isr)(void));
+	void service_interrupts(void);
 
 protected:
 	// Pointer to current process
@@ -43,7 +45,10 @@ protected:
 	std::uint16_t kstack_ptr = 0x0000;
 
 	// Queue of interrupts waiting to be scheduled
-	std::vector<task> isr_wait_queue;
+	std::vector<isr> isr_wait_queue;
+
+	// Queue of interrupts scheduled (FIFO with priority sorting)
+	stable_priority_queue<task> isr_sched_queue;
 
 	// Hash table mapping interrupt to associated task
 	std::unordered_map<isr, task> isr_vec_table;
