@@ -114,6 +114,9 @@ print.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/_defs.h
 print.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__undef_macros
 print.obj: C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.cpp
 print.obj: C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.h
+print.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/set
+print.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__tree
+print.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__undef_macros
 
 ../print.cpp: 
 C:/Users/krad2/workspace_v8/f5529_kernel/print.h: 
@@ -229,3 +232,6 @@ C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/_defs.h:
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__undef_macros: 
 C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.cpp: 
 C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.h: 
+C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/set: 
+C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__tree: 
+C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__undef_macros: 

@@ -87,7 +87,7 @@ public:
 	// Schedules a process
 	task &schedule(void);
 
-protected:
+public:
 	// List of tasks and pointer to current task & associated run counter in list
 	std::vector<std::pair<task, std::uint8_t>> tasks;
 	std::vector<std::pair<task, std::uint8_t>>::iterator current_task_ptr;

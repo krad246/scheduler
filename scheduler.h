@@ -95,6 +95,9 @@ public:
 
 
 	void unblock(task &target);
+
+private:
+	inline void request_preemption(void);
 };
 
 #include <scheduler.cpp>

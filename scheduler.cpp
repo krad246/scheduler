@@ -106,7 +106,7 @@ void scheduler<alg>::start(const std::initializer_list<task> &task_list) {
 
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::context_switch(void) {
-	__disable_interrupt();	// Enter critical section
+	_disable_interrupt();	// Enter critical section
 	this->save_context();	// Save current task context
 	this->enter_kstack();	// Switch to the OS stack
 	this->service_interrupts(); // Service interrupts
@@ -192,58 +192,45 @@ void scheduler<alg>::refresh(void) {
 }
 
 /**
+ * Requests scheduler to reschedule task
+ */
+
+template <scheduling_algorithms alg>
+inline void scheduler<alg>::request_preemption(void) {
+	// Set preemption flag and wait for interrupts
+	SFRIFG1 |= WDTIFG;
+	_enable_interrupt();
+}
+
+/**
  * Puts a task to sleep on a timer and performs stack manipulation to correctly transfer control to the scheduler
  */
 
 template <scheduling_algorithms alg>
 __attribute__((noinline)) void scheduler<alg>::sleep(const std::size_t ticks) {
-	__disable_interrupt();	// Enter critical section
+	_disable_interrupt();	// Enter critical section
 
 	// Set the sleep counter up for the calling process
-	this->current_process->sleep(ticks);
-
-	/**
-	 * Upon entry into sleep(), the address of the next normal instruction was pushed
-	 * Grab this instruction and reformat by swapping the upper and lower words for a BRA instruction
-	 */
-
-	const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
-	*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
-	*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
-
-	// Call the scheduler
-	abstract_scheduler::preempt();
+	this->get_current_process().sleep(ticks);
+	this->request_preemption();
 }
 
 template <scheduling_algorithms alg>
 __attribute__((noinline)) void scheduler<alg>::block(void) {
-	__disable_interrupt();	// Enter critical section
+	_disable_interrupt();	// Enter critical section
 
 	// Set the blocking flag on the current process
-	this->current_process->block();
-
-	/**
-	 * Upon entry into sleep(), the address of the next normal instruction was pushed
-	 * Grab this instruction and reformat by swapping the upper and lower words for a BRA instruction
-	 */
-
-	const register std::uint16_t temp = *reinterpret_cast<std::uint16_t *>(_get_SP_register());
-	*reinterpret_cast<std::uint16_t *>(_get_SP_register()) = *reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) << 12;
-	*reinterpret_cast<std::uint16_t *>(_get_SP_register() + 2) = temp;
-
-	// Call the scheduler
-	abstract_scheduler::preempt();
+	this->get_current_process().block();
+	this->request_preemption();
 }
 
 /**
- * Atomically unblocks a process when requested
+ * Unblocks a process when requested
  */
 
 template <scheduling_algorithms alg>
 void scheduler<alg>::unblock(task &target) {
-	_disable_interrupt();	// Enter critical section
 	target.unblock();
-	_enable_interrupt();	// Exits critical section
 }
 
 #endif

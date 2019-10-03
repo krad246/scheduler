@@ -11,6 +11,7 @@
 extern scheduler<scheduling_algorithms::round_robin> os;
 
 ring_buffer<char> rx_fifo(32);
+ring_buffer<char> tx_fifo(32);
 
 /**
  * Interrupt routine for receiving a character over UART
@@ -19,7 +20,7 @@ ring_buffer<char> rx_fifo(32);
 #pragma vector = USCI_A1_VECTOR
 __attribute__((interrupt)) void USCI_A1_ISR(void) {
 
-	auto old_sp = os.enter_kstack();
+//	auto old_sp = os.enter_kstack();
 
 	switch (__even_in_range(UCA1IV, 4)) {
 		case 0: { // Vector 0 - no interrupt
@@ -27,16 +28,30 @@ __attribute__((interrupt)) void USCI_A1_ISR(void) {
 		}
 
 		case 2: { // Vector 2 - RXIFG
-			rx_fifo.put(UCA1RXBUF);
-			if (rx_fifo.full()) {
-				os.schedule_interrupt(USCI_A1_ISR);
-			}
+			char recv = UCA1RXBUF;
 
-			UCA1IFG &= ~UCRXIFG;
+			P4OUT |= BIT7;
+			rx_fifo.put(recv);
+			P4OUT &= ~BIT7;
+
+			P1OUT |= BIT0;
+			uart_send_byte(recv);
+			P1OUT &= ~BIT0;
+
+			if (rx_fifo.full()) os.schedule_interrupt((isr) uart_rx_task); // when max(character requests) received, then schedule the rx task
 			break;
 		}
 
 		case 4: { // Vector 4 - TXIFG
+
+			if (!tx_fifo.empty()) {
+				P1OUT |= BIT0;
+				uart_send_byte(tx_fifo.get());
+				P1OUT &= ~BIT0;
+			} else {
+				UCA1IE &= ~UCTXIE;
+				UCA1IFG &= ~UCTXIFG;
+			}
 			break;
 		}
 
@@ -45,36 +60,89 @@ __attribute__((interrupt)) void USCI_A1_ISR(void) {
 		}
 	}
 
-	os.leave_kstack(old_sp);
+//	os.leave_kstack(old_sp);
 }
 
-std::int16_t uart_task(void) {
+#include <queue>
+#include <set>
+std::queue<task *> q;
+std::queue<task *> r;
+std::set<task *> s;
+//std::queue<task*> blockingQueue;
+std::int16_t uart_tx_task(void) {
 	while (1) {
-		os.refresh();
-		uart_printf("%s", "got characters\n\r");
-		while (!rx_fifo.empty()) {
-			uart_putc(rx_fifo.get());
+		_disable_interrupt();
+		if (!tx_fifo.empty()) {
+			while (UCA1STAT & UCBUSY);
+			UCA1IE |= UCTXIE;                         // Enable USCI_A0 TX interrupt
+			_enable_interrupt();
+			uart_send_byte(tx_fifo.get());
+		} else {
+			_disable_interrupt();
+			while (!q.empty()) {
+				os.unblock(*q.front());
+				q.pop();
+			}
+			_enable_interrupt();
+
+			os.block();
 		}
+	}
+}
+
+std::int16_t uart_rx_task(void) {
+	while (1) {
+		_disable_interrupt();
+		// copy rx characters to all processes waiting
+		_enable_interrupt();
+
+		_disable_interrupt();
+		while (!r.empty()) {
+			os.unblock(*r.front());
+			r.pop();
+		}
+		_enable_interrupt();
 
 		os.block();
 	}
 }
+
+//volatile task tx_task = task(uart_tx_task, 32, 1, true);
 
 /**
  * Initializes the UART for 115200 baud with a RX interrupt
  **/
 
 void uart_init(void) {
-	  P4SEL |= BIT4 + BIT5;                     // P3.3,4 = USCI_A0 TXD/RXD
-	  UCA1CTL1 |= UCSWRST;                      // Put state machine in reset
-	  UCA1CTL1 |= UCSSEL_2;                     // SMCLK
-	  UCA1BR0 = 9;                              // 1MHz 115200 (see User's Guide)
-	  UCA1BR1 = 0;                              // 1MHz 115200
-	  UCA1MCTL |= UCBRS_1 + UCBRF_0;            // Modulation UCBRSx=1, UCBRFx=0
-	  UCA1CTL1 &= ~UCSWRST;                     // Initialize USCI state machine
-	  UCA1IE |= UCRXIE;                         // Enable USCI_A0 RX interrupt
+	P4SEL |= BIT4 + BIT5;                     // P3.3,4 = USCI_A0 TXD/RXD
+	UCA1CTL1 |= UCSWRST;                      // Put state machine in reset
+	UCA1CTL1 |= UCSSEL_2;                     // SMCLK
+	UCA1BR0 = 9;                              // 1MHz 115200 (see User's Guide)
+	UCA1BR1 = 0;                              // 1MHz 115200
+	UCA1MCTL |= UCBRS_1 + UCBRF_0;            // Modulation UCBRSx=1, UCBRFx=0
+	UCA1CTL1 &= ~UCSWRST;                     // Initialize USCI state machine
+	UCA1IE |= UCRXIE;                         // Enable USCI_A0 RX interrupt
 
-	  os.attach_interrupt(USCI_A1_ISR, task(uart_task, 32));
+	P4DIR |= BIT7;
+	P4OUT &= ~BIT7;
+	P1DIR |= BIT0;
+	P1OUT &= ~BIT0;
+
+	os.attach_interrupt((isr) uart_tx_task, task(uart_tx_task, 64));
+	os.attach_interrupt((isr) uart_rx_task, task(uart_rx_task, 64));
+}
+
+
+
+// to add:
+
+void add(task *x)
+{
+    if (s.find(x) == s.end())
+    {
+        q.push(x);
+        s.emplace(q.back());  // or "s.emplace(q.back());"
+    }
 }
 
 /**
@@ -82,7 +150,7 @@ void uart_init(void) {
  **/
 
 void uart_puts(char *s) {
-	for (char *p = s; *p != 0; p++) uart_send_byte(*p);
+	for (char *p = s; *p != 0; p++) uart_putc(*p);
 }
 
 /**
@@ -90,7 +158,18 @@ void uart_puts(char *s) {
  **/
 
 void uart_putc(unsigned b) {
-	uart_send_byte(b);
+	_disable_interrupt();
+	if (tx_fifo.full()) {
+		os.schedule_interrupt((isr) uart_tx_task);
+//		 q.push(&os.get_current_process());
+//		add(&os.get_current_process());
+//		os.block();
+	}
+	_enable_interrupt();
+
+	while (tx_fifo.full());
+
+	tx_fifo.put(b);
 }
 
 /**
@@ -98,7 +177,6 @@ void uart_putc(unsigned b) {
  **/
 
 void uart_send_byte(unsigned char byte) {
-	while (UCA1STAT & UCBUSY);
 	UCA1TXBUF = byte;
 }
 
@@ -125,9 +203,13 @@ static void xtoa(unsigned long x, const unsigned long *dp) {
 			++dp;
 		do {
 			d = *dp++;
+			if (d == 0) break;
 			c = '0';
-			while (x >= d)
-				++c, x -= d;
+			while (x >= d) {
+				++c;
+				x -= d;
+			}
+
 			uart_putc(c);
 		} while (!(d & 1));
 	} else

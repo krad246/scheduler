@@ -31,7 +31,7 @@ struct thread_info {
 	std::size_t ticks;
 	std::size_t sleep_ticks;
 
-	bool blocking;
+	bool blocked;
 
 	const std::string to_string(void);
 };
@@ -47,7 +47,7 @@ public:
 	 * Constructors for scheduler data structure management
 	 */
 
-	task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t priority = 1);
+	task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t priority = 1, bool blocking = false);
 
 	/**
 	 * Copy-ish constructors

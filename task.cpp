@@ -35,7 +35,7 @@ task task::idle_hook = task(task::idle, 32);
  * @param priority - task run queue priority
  */
 
-task::task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t priority) {
+task::task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t priority, bool blocking) {
 	// Allocate process stack
 	this->ustack = std::make_unique<std::uint16_t []>(stack_size);
 
@@ -48,7 +48,8 @@ task::task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t 
 			.stack_size = stack_size,
 			.stack_usage = 0,
 			.ticks = 0,
-			.sleep_ticks = 0
+			.sleep_ticks = 0,
+			.blocked = blocking
 	};
 
 	/**
@@ -70,7 +71,7 @@ task::task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t 
  */
 
 task::task(const task &other) {
-	new (this) task(other.runnable, other.info.stack_size, other.info.priority);
+	new (this) task(other.runnable, other.info.stack_size, other.info.priority, other.info.blocked);
 }
 
 /**
@@ -132,7 +133,7 @@ void task::sleep(const std::size_t ticks) {
  */
 
 void task::block(void) {
-	this->info.blocking = true;
+	this->info.blocked = true;
 }
 
 /**
@@ -140,7 +141,7 @@ void task::block(void) {
  */
 
 void task::unblock(void) {
-	this->info.blocking = false;
+	this->info.blocked = false;
 }
 
 /**
@@ -180,7 +181,7 @@ bool task::sleeping(void) const {
  */
 
 bool task::blocking(void) const {
-	return this->info.blocking;
+	return this->info.blocked;
 }
 
 /**

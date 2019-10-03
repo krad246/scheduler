@@ -12,21 +12,23 @@
 
 #include <memory>
 
+// Ring buffer class for kernel data structures
+
 template <class T>
 class ring_buffer {
 public:
 	explicit ring_buffer(std::size_t size);
 
-	void put(T item);
-	T get();
+	inline void put(T item);	// Push
+	inline T get();				// Pop
 
-	void reset();
+	inline void reset();		// Clear
 
-	bool empty() const;
-	bool full() const;
+	inline bool empty() const;
+	inline bool full() const;
 
-	std::size_t capacity() const;
-	std::size_t size() const;
+	inline std::size_t capacity() const;
+	inline std::size_t size() const;
 
 private:
 	std::unique_ptr<T[]> buf_;

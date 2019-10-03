@@ -21,7 +21,7 @@ scheduler<scheduling_algorithms::round_robin> os;
 struct task_config task_cfgs[num_tasks_declared] = {
 		{
 				.func = foo,
-				.stack_size = 32,
+				.stack_size = 48,
 				.priority = 1
 		},
 		{
