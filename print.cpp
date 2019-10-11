@@ -10,8 +10,8 @@
 
 extern scheduler<scheduling_algorithms::round_robin> os;
 
-ring_buffer<char> rx_fifo(32);
-ring_buffer<char> tx_fifo(32);
+ring_buffer<char> rx_fifo(16);
+ring_buffer<char> tx_fifo(16);
 
 /**
  * Interrupt routine for receiving a character over UART
@@ -19,9 +19,6 @@ ring_buffer<char> tx_fifo(32);
 
 #pragma vector = USCI_A1_VECTOR
 __attribute__((interrupt)) void USCI_A1_ISR(void) {
-
-//	auto old_sp = os.enter_kstack();
-
 	switch (__even_in_range(UCA1IV, 4)) {
 		case 0: { // Vector 0 - no interrupt
 			break;
@@ -59,34 +56,19 @@ __attribute__((interrupt)) void USCI_A1_ISR(void) {
 			break;
 		}
 	}
-
-//	os.leave_kstack(old_sp);
 }
 
-#include <queue>
-#include <set>
-std::queue<task *> q;
-std::queue<task *> r;
-std::set<task *> s;
-//std::queue<task*> blockingQueue;
 std::int16_t uart_tx_task(void) {
 	while (1) {
 		_disable_interrupt();
 		if (!tx_fifo.empty()) {
 			while (UCA1STAT & UCBUSY);
 			UCA1IE |= UCTXIE;                         // Enable USCI_A0 TX interrupt
-			_enable_interrupt();
 			uart_send_byte(tx_fifo.get());
 		} else {
-			_disable_interrupt();
-			while (!q.empty()) {
-				os.unblock(*q.front());
-				q.pop();
-			}
-			_enable_interrupt();
-
-			os.block();
+			os.suspend();
 		}
+		_enable_interrupt();
 	}
 }
 
@@ -97,17 +79,11 @@ std::int16_t uart_rx_task(void) {
 		_enable_interrupt();
 
 		_disable_interrupt();
-		while (!r.empty()) {
-			os.unblock(*r.front());
-			r.pop();
-		}
 		_enable_interrupt();
 
 		os.block();
 	}
 }
-
-//volatile task tx_task = task(uart_tx_task, 32, 1, true);
 
 /**
  * Initializes the UART for 115200 baud with a RX interrupt
@@ -128,21 +104,8 @@ void uart_init(void) {
 	P1DIR |= BIT0;
 	P1OUT &= ~BIT0;
 
-	os.attach_interrupt((isr) uart_tx_task, task(uart_tx_task, 64));
+	os.add_task(std::move(task(uart_tx_task, 64)));
 	os.attach_interrupt((isr) uart_rx_task, task(uart_rx_task, 64));
-}
-
-
-
-// to add:
-
-void add(task *x)
-{
-    if (s.find(x) == s.end())
-    {
-        q.push(x);
-        s.emplace(q.back());  // or "s.emplace(q.back());"
-    }
 }
 
 /**
@@ -159,12 +122,6 @@ void uart_puts(char *s) {
 
 void uart_putc(unsigned b) {
 	_disable_interrupt();
-	if (tx_fifo.full()) {
-		os.schedule_interrupt((isr) uart_tx_task);
-//		 q.push(&os.get_current_process());
-//		add(&os.get_current_process());
-//		os.block();
-	}
 	_enable_interrupt();
 
 	while (tx_fifo.full());

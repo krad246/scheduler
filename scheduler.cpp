@@ -202,12 +202,17 @@ inline void scheduler<alg>::request_preemption(void) {
 	_enable_interrupt();
 }
 
+template <scheduling_algorithms alg>
+void scheduler<alg>::suspend(void) {
+	this->request_preemption();
+}
+
 /**
  * Puts a task to sleep on a timer and performs stack manipulation to correctly transfer control to the scheduler
  */
 
 template <scheduling_algorithms alg>
-__attribute__((noinline)) void scheduler<alg>::sleep(const std::size_t ticks) {
+void scheduler<alg>::sleep(const std::size_t ticks) {
 	_disable_interrupt();	// Enter critical section
 
 	// Set the sleep counter up for the calling process
@@ -216,7 +221,7 @@ __attribute__((noinline)) void scheduler<alg>::sleep(const std::size_t ticks) {
 }
 
 template <scheduling_algorithms alg>
-__attribute__((noinline)) void scheduler<alg>::block(void) {
+void scheduler<alg>::block(void) {
 	_disable_interrupt();	// Enter critical section
 
 	// Set the blocking flag on the current process

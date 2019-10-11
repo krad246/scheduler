@@ -86,8 +86,9 @@ public:
 	 * Puts a task to sleep either manually or on a timer
 	 */
 
-	__attribute__((noinline)) void sleep(std::size_t ticks);
-	__attribute__((noinline)) void block(void);
+	void sleep(std::size_t ticks);
+	void block(void);
+	void suspend(void);
 
 	/**
 	 * Functions that reawaken tasks or allow scheduler control again
