@@ -79,6 +79,7 @@ std::int16_t uart_rx_task(void) {
 		_enable_interrupt();
 
 		_disable_interrupt();
+		rx_fifo.reset();
 		_enable_interrupt();
 
 		os.block();
@@ -122,11 +123,14 @@ void uart_puts(char *s) {
 
 void uart_putc(unsigned b) {
 	_disable_interrupt();
+	while (tx_fifo.full()) {
+		os.suspend();
+	}
 	_enable_interrupt();
 
-	while (tx_fifo.full());
-
+	_disable_interrupt();
 	tx_fifo.put(b);
+	_enable_interrupt();
 }
 
 /**

@@ -198,6 +198,7 @@ void scheduler<alg>::refresh(void) {
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::request_preemption(void) {
 	// Set preemption flag and wait for interrupts
+	_disable_interrupt();
 	SFRIFG1 |= WDTIFG;
 	_enable_interrupt();
 }
@@ -218,6 +219,8 @@ void scheduler<alg>::sleep(const std::size_t ticks) {
 	// Set the sleep counter up for the calling process
 	this->get_current_process().sleep(ticks);
 	this->request_preemption();
+
+	_enable_interrupt();
 }
 
 template <scheduling_algorithms alg>
@@ -227,6 +230,8 @@ void scheduler<alg>::block(void) {
 	// Set the blocking flag on the current process
 	this->get_current_process().block();
 	this->request_preemption();
+
+	_enable_interrupt();
 }
 
 /**
