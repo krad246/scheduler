@@ -21,38 +21,38 @@ scheduler<scheduling_algorithms::round_robin> os;
 struct task_config task_cfgs[num_tasks_declared] = {
 		{
 				.func = foo,
-				.stack_size = 48,
+				.stack_size = 64,
 				.priority = 1
 		},
 		{
 				.func = bar,
-				.stack_size = 32,
+				.stack_size = 64,
 				.priority = 2
 		},
 		{
 				.func = printer1,
-				.stack_size = 32,
+				.stack_size = 64,
 				.priority = 3,
 		},
 		{
 				.func = printer2,
-				.stack_size = 32,
+				.stack_size = 64,
 				.priority = 4,
 		},
-		{
-				.func = printer3,
-				.stack_size = 32,
-				.priority = 5,
-		},
-		{
-				.func = printer4,
-				.stack_size = 32,
-				.priority = 6,
-		},
-		{
-				.func = fib,
-				.stack_size = 32,
-				.priority = 1,
-
-		}
+//		{
+//				.func = printer3,
+//				.stack_size = 32,
+//				.priority = 5,
+//		},
+//		{
+//				.func = printer4,
+//				.stack_size = 32,
+//				.priority = 6,
+//		},
+//		{
+//				.func = fib,
+//				.stack_size = 32,
+//				.priority = 1,
+//
+//		}
 };

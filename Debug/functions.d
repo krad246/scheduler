@@ -100,6 +100,9 @@ functions.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcx
 functions.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/limits.h
 functions.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__undef_macros
 functions.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/functional
+functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h
+functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.cpp
+functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h
 functions.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/unordered_map
 functions.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__hash_table
 functions.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/cmath
@@ -111,9 +114,6 @@ functions.obj: C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcx
 functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.cpp
 functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.h
 functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/print.h
-functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h
-functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.cpp
-functions.obj: C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h
 
 ../functions.cpp: 
 C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.h: 
@@ -215,6 +215,9 @@ C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/limits.h:
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/limits.h: 
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__undef_macros: 
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/functional: 
+C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h: 
+C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.cpp: 
+C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h: 
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/unordered_map: 
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/__hash_table: 
 C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/cmath: 
@@ -226,6 +229,3 @@ C:/ti/ccsv8/tools/compiler/ti-cgt-msp430_18.1.6.LTS/include/libcxx/cstdarg:
 C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.cpp: 
 C:/Users/krad2/workspace_v8/f5529_kernel/scheduler.h: 
 C:/Users/krad2/workspace_v8/f5529_kernel/print.h: 
-C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h: 
-C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.cpp: 
-C:/Users/krad2/workspace_v8/f5529_kernel/ring_buffer.h: 

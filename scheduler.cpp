@@ -45,11 +45,8 @@ void scheduler<alg>::add_task(const task &t) {
  */
 
 template <scheduling_algorithms alg>
-void scheduler<alg>::cleanup(task &t) {
-	_disable_interrupt(); // Enter critical section
-
+void scheduler<alg>::cleanup(const task &t) {
 	base_scheduler<alg>::cleanup(t); // Call super.cleanup()
-	this->leave_kernel_mode(); // Leave critical section
 }
 
 extern void driver_init(void);	// Driver initialization function provided by user
@@ -117,6 +114,9 @@ inline void scheduler<alg>::context_switch(void) {
 		this->restore_context(driver_handler);
 	} else {	// Else handle normal processes
 		task &runnable = this->schedule();	// Determine the next process to run
+		if (this->get_current_process().complete()) {
+			this->cleanup(this->get_current_process());
+		}
 		this->restore_context(runnable);	// Select that process and load it
 	}
 }
@@ -229,6 +229,17 @@ void scheduler<alg>::block(void) {
 
 	// Set the blocking flag on the current process
 	this->get_current_process().block();
+	this->request_preemption();
+
+	_enable_interrupt();
+}
+
+template <scheduling_algorithms alg>
+void scheduler<alg>::ret(void) {
+	_disable_interrupt();	// Enter critical section
+
+	// Set the complete flag on the current process
+	this->get_current_process().ret();
 	this->request_preemption();
 
 	_enable_interrupt();

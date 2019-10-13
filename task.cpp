@@ -29,12 +29,36 @@ const std::string thread_info::to_string(void) {
 task task::idle_hook = task(task::idle, 32);
 
 /**
+ * Default constructor
+ */
+
+task::task() {
+	// No stack allocated yet
+	this->ustack = std::unique_ptr<std::uint16_t []>(nullptr);
+
+	// No code associated with the thread yet
+	this->runnable = nullptr;
+
+	// Default values for state
+	this->info = {
+			.id = -1,
+			.priority = 0,
+			.stack_size = 0,
+			.stack_usage = 0,
+			.ticks = 0,
+			.sleep_ticks = 0,
+			.blocked = true,
+			.complete = true
+	};
+}
+
+/**
  * Constructor for task configuration
  * @param runnable - pointer to executable function
  * @param stack_size - size of allocated stack address space
  * @param priority - task run queue priority
  */
-
+static int16_t tid = 0;
 task::task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t priority, bool blocking) {
 	// Allocate process stack
 	this->ustack = std::make_unique<std::uint16_t []>(stack_size);
@@ -44,12 +68,14 @@ task::task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t 
 
 	// Initializes resource monitors to initial conditions
 	this->info = {
+			.id = tid++,
 			.priority = priority,
 			.stack_size = stack_size,
 			.stack_usage = 0,
 			.ticks = 0,
 			.sleep_ticks = 0,
-			.blocked = blocking
+			.blocked = blocking,
+			.complete = false
 	};
 
 	/**
@@ -145,6 +171,14 @@ void task::unblock(void) {
 }
 
 /**
+ * Kills task
+ */
+
+void task::ret(void) {
+	this->info.complete = true;
+}
+
+/**
  * Fetches last known location of the top of the stack
  */
 
@@ -182,6 +216,14 @@ bool task::sleeping(void) const {
 
 bool task::blocking(void) const {
 	return this->info.blocked;
+}
+
+/**
+ * Asserts if task is done
+ */
+
+bool task::complete(void) const {
+	return this->info.complete;
 }
 
 /**

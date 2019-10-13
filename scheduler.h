@@ -39,7 +39,7 @@ public:
 	 */
 
 	void add_task(const task &t);
-	void cleanup(task &t);
+	void cleanup(const task &t);
 
 	/**
 	 * Initializes operating system using configuration set in config.h
@@ -89,6 +89,7 @@ public:
 	void sleep(std::size_t ticks);
 	void block(void);
 	void suspend(void);
+	void ret(void);
 
 	/**
 	 * Functions that reawaken tasks or allow scheduler control again

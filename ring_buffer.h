@@ -17,7 +17,11 @@
 template <class T>
 class ring_buffer {
 public:
-	explicit ring_buffer(std::size_t size);
+	ring_buffer();
+	ring_buffer(std::size_t size);
+
+	ring_buffer(const ring_buffer &other);
+	ring_buffer &operator=(const ring_buffer &other);
 
 	inline void put(T item);	// Push
 	inline T get();				// Pop

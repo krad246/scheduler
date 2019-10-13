@@ -11,7 +11,10 @@
 extern scheduler<scheduling_algorithms::round_robin> os;
 
 ring_buffer<char> rx_fifo(16);
-ring_buffer<char> tx_fifo(16);
+ring_buffer<char> tx_fifo(4);
+
+volatile bool rx_scheduled = false;
+volatile bool tx_scheduled = false;
 
 /**
  * Interrupt routine for receiving a character over UART
@@ -35,7 +38,10 @@ __attribute__((interrupt)) void USCI_A1_ISR(void) {
 			uart_send_byte(recv);
 			P1OUT &= ~BIT0;
 
-			if (rx_fifo.full()) os.schedule_interrupt((isr) uart_rx_task); // when max(character requests) received, then schedule the rx task
+			if (rx_fifo.full() && !rx_scheduled) {
+				os.schedule_interrupt((isr) uart_rx_task); // when max(character requests) received, then schedule the rx task
+				rx_scheduled = true;
+			}
 			break;
 		}
 
@@ -66,7 +72,8 @@ std::int16_t uart_tx_task(void) {
 			UCA1IE |= UCTXIE;                         // Enable USCI_A0 TX interrupt
 			uart_send_byte(tx_fifo.get());
 		} else {
-			os.suspend();
+			tx_scheduled = false;
+			os.block();
 		}
 		_enable_interrupt();
 	}
@@ -80,6 +87,7 @@ std::int16_t uart_rx_task(void) {
 
 		_disable_interrupt();
 		rx_fifo.reset();
+		rx_scheduled = false;
 		_enable_interrupt();
 
 		os.block();
@@ -105,8 +113,8 @@ void uart_init(void) {
 	P1DIR |= BIT0;
 	P1OUT &= ~BIT0;
 
-	os.add_task(std::move(task(uart_tx_task, 64)));
-	os.attach_interrupt((isr) uart_rx_task, task(uart_rx_task, 64));
+//	os.attach_interrupt((isr) uart_tx_task, task(uart_tx_task, 32));
+//	os.attach_interrupt((isr) uart_rx_task, task(uart_rx_task, 32));
 }
 
 /**
@@ -122,11 +130,14 @@ void uart_puts(char *s) {
  **/
 
 void uart_putc(unsigned b) {
-	_disable_interrupt();
-	while (tx_fifo.full()) {
-		os.suspend();
+	if (tx_fifo.full()) {
+		if (!tx_scheduled) {
+			os.schedule_interrupt((isr) uart_tx_task);
+			tx_scheduled = true;
+		}
 	}
-	_enable_interrupt();
+
+	while (tx_fifo.full());
 
 	_disable_interrupt();
 	tx_fifo.put(b);

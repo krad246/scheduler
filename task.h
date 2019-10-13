@@ -23,6 +23,7 @@ class task;
  */
 
 struct thread_info {
+	std::int16_t id;
 	std::uint8_t priority;
 
 	std::size_t stack_size;
@@ -32,6 +33,7 @@ struct thread_info {
 	std::size_t sleep_ticks;
 
 	bool blocked;
+	bool complete;
 
 	const std::string to_string(void);
 };
@@ -46,7 +48,7 @@ public:
 	/**
 	 * Constructors for scheduler data structure management
 	 */
-
+	task();
 	task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t priority = 1, bool blocking = false);
 
 	/**
@@ -72,6 +74,7 @@ public:
 	void sleep(const std::size_t ticks);
 	void block(void);
 	void unblock(void);
+	void ret(void);
 
 	/**
 	 * State information retrieval functions
@@ -82,6 +85,7 @@ public:
 	const thread_info &get_state(void) const;
 	bool sleeping(void) const;
 	bool blocking(void) const;
+	bool complete(void) const;
 
 	/**
 	 * Idle hook which is called when no tasks are available to run
@@ -96,6 +100,10 @@ public:
 
 	friend bool operator<(const task &t1, const task &t2) {
 		return t1.info.priority > t2.info.priority;
+	}
+
+	friend bool operator==(const task &t1, const task &t2) {
+		return t1.info.id == t2.info.id;
 	}
 
 private:

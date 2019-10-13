@@ -11,7 +11,21 @@
 #include <ring_buffer.h>
 
 template <class T>
+ring_buffer<T>::ring_buffer() : buf_(std::unique_ptr<T[]>(nullptr)), max_size_(0) { }
+
+template <class T>
 ring_buffer<T>::ring_buffer(std::size_t size) : buf_(std::unique_ptr<T[]>(new T[size])), max_size_(size) { }
+
+template <class T>
+ring_buffer<T>::ring_buffer(const ring_buffer<T> &other) {
+	new (this) ring_buffer<T>(max_size_);
+}
+
+template <class T>
+ring_buffer<T> &ring_buffer<T>::operator=(const ring_buffer<T> &other) {
+	new (this) ring_buffer<T>(max_size_);
+	return *this;
+}
 
 template <class T>
 inline void ring_buffer<T>::put(T item) {

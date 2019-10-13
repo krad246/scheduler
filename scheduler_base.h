@@ -11,6 +11,7 @@
 #include <task.h>
 #include <config.h>
 #include <stable_priority_queue.h>
+#include <ring_buffer.h>
 
 #include <cstdlib>
 #include <cstddef>
@@ -38,6 +39,8 @@ public:
 	void service_interrupts(void);
 
 protected:
+	abstract_scheduler();
+
 	// Pointer to current process
 	task *current_process = nullptr;
 
@@ -45,7 +48,7 @@ protected:
 	std::uint16_t kstack_ptr = 0x0000;
 
 	// Queue of interrupts waiting to be scheduled
-	std::vector<isr> isr_wait_queue;
+	ring_buffer<isr> isr_wait_queue;
 
 	// Queue of interrupts scheduled (FIFO with priority sorting)
 	stable_priority_queue<task> isr_sched_queue;
@@ -79,7 +82,7 @@ public:
 
 	// Adds / removes task to / from process queue
 	void add_task(const task &t);
-	void cleanup(task &t);
+	void cleanup(const task &t);
 
 	// Starts OS up once initialized correctly
 	void start(void);

@@ -11,6 +11,14 @@
 extern scheduler<scheduling_algorithms::round_robin> os;
 
 /**
+ * Default constructor
+ */
+
+abstract_scheduler::abstract_scheduler() {
+	this->isr_wait_queue = ring_buffer<isr>(INT_QUEUE_SIZE);
+}
+
+/**
  * Creates an interrupt handler task for the scheduler, mapped to an interrupt or other callback
  */
 
@@ -23,7 +31,7 @@ void abstract_scheduler::attach_interrupt(void (*isr)(void), const task &driver_
  */
 
 void abstract_scheduler::schedule_interrupt(void (*isr)(void)) {
-	this->isr_wait_queue.push_back(isr);	// Simple numeric copy is faster
+	this->isr_wait_queue.put(isr);	// Simple numeric copy is faster
 }
 
 /**
@@ -32,17 +40,13 @@ void abstract_scheduler::schedule_interrupt(void (*isr)(void)) {
 
 void abstract_scheduler::service_interrupts(void) {
 	// If any interrupt handlers have completed in some way then remove them
-	while (this->isr_sched_queue.size() > 0 && (this->isr_sched_queue.top().blocking() || this->isr_sched_queue.top().sleeping())) {
+	while (this->isr_sched_queue.size() > 0 && this->isr_sched_queue.top().blocking()) {
 		this->isr_sched_queue.pop();
 	}
 
-	if (this->isr_wait_queue.size() > 0) {	// If any new interrupts were receieved, push the corresponding tasks to the scheduler queue
-		for (std::vector<isr>::iterator it = this->isr_wait_queue.begin(); it != this->isr_wait_queue.end(); ++it) {
-			auto driver_ptr = this->isr_vec_table.find(*it);	// Find the task corresponding to the ISR just executed
-			this->isr_sched_queue.emplace(driver_ptr->second);	// Push it to the waiting queue
-		}
-
-		this->isr_wait_queue.clear();	// Clear the wait queue because these were registered
+	while (!this->isr_wait_queue.empty()) {	// If any new interrupts were receieved, push the corresponding tasks to the scheduler queue
+		auto driver_ptr = this->isr_vec_table.find(this->isr_wait_queue.get());	// Find the task corresponding to the ISR just executed
+		this->isr_sched_queue.emplace(driver_ptr->second);	// Push it to the waiting queue
 	}
 }
 
@@ -85,9 +89,14 @@ void base_scheduler<scheduling_algorithms::round_robin>::add_task(const task &t)
  * Deletes a completed task
  */
 
-void base_scheduler<scheduling_algorithms::round_robin>::cleanup(task &t) {
-	(void) t;
+void base_scheduler<scheduling_algorithms::round_robin>::cleanup(const task &t) {
+	auto it = std::find_if(this->tasks.begin(), this->tasks.end(), [&](const std::pair<task, std::uint8_t>& element) {
+		return element.first == t;
+	});
 
+	if (it == this->tasks.end()) return;
+
+	this->tasks.erase(it);
 }
 
 /**

@@ -14,6 +14,7 @@
 #include <cstddef>
 
 #define DEBUG_MODE
+#define INT_QUEUE_SIZE 32
 
 /**
  * Declare your functions here
@@ -33,7 +34,7 @@ decl_function(fib);
  * Count number of declared tasks
  */
 
-#define num_tasks_declared 7
+#define num_tasks_declared 4
 
 /**
  * Struct declaration for task customization array

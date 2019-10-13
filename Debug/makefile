@@ -12,6 +12,7 @@ GEN_CMDS__FLAG :=
 ORDERED_OBJS += \
 "./config.obj" \
 "./functions.obj" \
+"./handler.obj" \
 "./main.obj" \
 "./print.obj" \
 "./ring_buffer.obj" \
@@ -162,8 +163,8 @@ f5529_kernel.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "config.obj" "functions.obj" "main.obj" "print.obj" "ring_buffer.obj" "scheduler.obj" "scheduler_base.obj" "task.obj" 
-	-$(RM) "config.d" "functions.d" "main.d" "print.d" "ring_buffer.d" "scheduler.d" "scheduler_base.d" "task.d" 
+	-$(RM) "config.obj" "functions.obj" "handler.obj" "main.obj" "print.obj" "ring_buffer.obj" "scheduler.obj" "scheduler_base.obj" "task.obj" 
+	-$(RM) "config.d" "functions.d" "handler.d" "main.d" "print.d" "ring_buffer.d" "scheduler.d" "scheduler_base.d" "task.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

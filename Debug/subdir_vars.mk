@@ -8,6 +8,7 @@ SHELL = cmd.exe
 CPP_SRCS += \
 ../config.cpp \
 ../functions.cpp \
+../handler.cpp \
 ../main.cpp \
 ../print.cpp \
 ../ring_buffer.cpp \
@@ -21,6 +22,7 @@ CMD_SRCS += \
 OBJS += \
 ./config.obj \
 ./functions.obj \
+./handler.obj \
 ./main.obj \
 ./print.obj \
 ./ring_buffer.obj \
@@ -31,6 +33,7 @@ OBJS += \
 CPP_DEPS += \
 ./config.d \
 ./functions.d \
+./handler.d \
 ./main.d \
 ./print.d \
 ./ring_buffer.d \
@@ -41,6 +44,7 @@ CPP_DEPS += \
 OBJS__QUOTED += \
 "config.obj" \
 "functions.obj" \
+"handler.obj" \
 "main.obj" \
 "print.obj" \
 "ring_buffer.obj" \
@@ -51,6 +55,7 @@ OBJS__QUOTED += \
 CPP_DEPS__QUOTED += \
 "config.d" \
 "functions.d" \
+"handler.d" \
 "main.d" \
 "print.d" \
 "ring_buffer.d" \
@@ -61,6 +66,7 @@ CPP_DEPS__QUOTED += \
 CPP_SRCS__QUOTED += \
 "../config.cpp" \
 "../functions.cpp" \
+"../handler.cpp" \
 "../print.cpp" \
 "../ring_buffer.cpp" \
 "../scheduler.cpp" \

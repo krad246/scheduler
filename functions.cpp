@@ -26,13 +26,15 @@ extern scheduler<scheduling_algorithms::round_robin> os;
 std::int16_t foo(void) {
 	P1DIR |= BIT0;
 	P1OUT &= ~BIT0;
-
+	volatile int cnt = 0;
 	while (1) {
 		os.refresh();
 
-//		P1OUT ^= BIT0;
-		uart_printf("foo: %u\r\n", os.get_thread_state().ticks);
-
+		P1OUT ^= BIT0;
+		//uart_printf("foo: %u\r\n", os.get_thread_state().ticks);
+		if (cnt++ == 20) {
+			os.ret();
+		}
 		os.sleep(32);
 	}
 }
@@ -44,9 +46,10 @@ std::int16_t bar(void) {
 	while (1) {
 		os.refresh();
 
-//		P4OUT ^= BIT7;
+		P4OUT ^= BIT7;
+		//uart_printf("bar: %u\r\n", os.get_thread_state().ticks);
 
-		os.sleep(1);
+		os.sleep(64);
 	}
 }
 
