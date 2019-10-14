@@ -355,7 +355,7 @@ task &base_scheduler<scheduling_algorithms::lottery>::schedule(void) {
 	}
 
 	const auto roll = bounded_rand32(rand32, pool_size);	// Compute fast random modulus for the draw
-	auto it = std::lower_bound(intervals.begin(), intervals.end(), roll);	// Binary search to find the process
+	auto it = std::upper_bound(intervals.begin(), intervals.end(), roll);	// Binary search to find the process
 	auto idx = it - intervals.begin();
 
 	this->current_process = this->tasks.data() + idx;		// Update and return
