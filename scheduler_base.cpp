@@ -8,7 +8,7 @@
 #include <scheduler_base.h>
 #include <scheduler.h>
 
-extern scheduler<scheduling_algorithms::round_robin> os;
+extern scheduler<scheduling_algorithms::lottery> os;
 
 /**
  * Default constructor
@@ -61,6 +61,15 @@ base_scheduler<scheduling_algorithms::round_robin>::base_scheduler() {
 }
 
 /**
+ * Initializes the scheduler with an empty set of tasks, etc.
+ */
+
+base_scheduler<scheduling_algorithms::lottery>::base_scheduler() {
+	this->tasks = std::vector<task>();
+	this->kstack_ptr = 0x0000;
+}
+
+/**
  * Initializes all of the passed-in tasks, places them in the task list, and sets the start pointer
  */
 
@@ -78,11 +87,34 @@ base_scheduler<scheduling_algorithms::round_robin>::base_scheduler(const std::in
 }
 
 /**
+ * Initializes all of the passed-in tasks, places them in the task list, and sets the start pointer
+ */
+
+base_scheduler<scheduling_algorithms::lottery>::base_scheduler(const std::initializer_list<task> &task_list) {
+	std::transform (
+		task_list.begin(),
+		task_list.end(),
+		std::back_inserter(this->tasks),
+		[] (const task &t) {
+			return t;
+		}
+	);
+}
+
+/**
  * Adds a task to the list
  */
 
 void base_scheduler<scheduling_algorithms::round_robin>::add_task(const task &t) {
 	this->tasks.emplace_back(std::move(std::make_pair(t, t.get_priority())));
+}
+
+/**
+ * Adds a task to the list
+ */
+
+void base_scheduler<scheduling_algorithms::lottery>::add_task(const task &t) {
+	this->tasks.emplace_back(std::move(t));
 }
 
 /**
@@ -103,11 +135,36 @@ void base_scheduler<scheduling_algorithms::round_robin>::cleanup(const task &t) 
 }
 
 /**
+ * Deletes a completed task
+ */
+
+void base_scheduler<scheduling_algorithms::lottery>::cleanup(const task &t) {
+	auto it = std::remove_if(					// Find the task to delete and move it to the end so it can be deleted cleanly
+		this->tasks.begin(),
+		this->tasks.end(),
+		[&](const task& element) {
+			return element == t;
+		}
+	);
+
+	if (it == this->tasks.end()) return;		// If it doesn't exist then there is a problem
+	this->tasks.erase(it);						// Else erase the task
+}
+
+/**
  * Sets the system stack up, sets the start pointer
  */
 
 void base_scheduler<scheduling_algorithms::round_robin>::start(void) {
 	this->current_task_ptr = tasks.begin();
+	this->kstack_ptr = _get_SP_register();
+}
+
+/**
+ * Sets the system stack up, sets the start pointer
+ */
+
+void base_scheduler<scheduling_algorithms::lottery>::start(void) {
 	this->kstack_ptr = _get_SP_register();
 }
 
@@ -123,7 +180,7 @@ task &base_scheduler<scheduling_algorithms::round_robin>::schedule(void) {
 	 * If there are no tasks available, simply idle
 	 */
 
-	std::size_t num_avail = tasks.size();
+	std::size_t num_avail = this->num_tasks;
 	if (num_avail == 0) {
 		this->current_process = &task::idle_hook;
 		return task::idle_hook;
@@ -187,10 +244,122 @@ task &base_scheduler<scheduling_algorithms::round_robin>::schedule(void) {
 	return task_ptr->first;
 }
 
-task &base_scheduler<scheduling_algorithms::lottery>::schedule(void) {
-	for (;;) {
+/**
+ * Fast clz using Debruijn multiplication
+ */
 
+std::uint32_t clz(std::uint32_t x) {
+    static const char debruijn32[32] = {
+        0, 31, 9, 30, 3, 8, 13, 29, 2, 5, 7, 21, 12, 24, 28, 19,
+        1, 10, 4, 14, 6, 22, 25, 20, 11, 15, 23, 26, 16, 27, 17, 18
+    };
+
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    x++;
+
+    return debruijn32[x * 0x076be629 >> 27];
+}
+
+/**
+ * XORShift random number generator for various widths. The period of a XORShift generator with width N
+ * is -1 + (1 << N). For more randomness, use a bigger one. The tradeoff is performance.
+ */
+
+inline std::uint16_t rand16(void) {
+	static std::uint16_t state = 1;
+    state ^= state << 7;
+    state ^= state >> 9;
+    state ^= state << 8;
+    return state;
+}
+
+inline std::uint32_t rand32(void) {
+	static std::uint32_t state = 2463534242;
+    state ^= state << 13;
+    state ^= state >> 17;
+    state ^= state << 5;
+    return state;
+}
+
+inline std::uint64_t rand64(void) {
+	static std::uint64_t state = 8817264546332525;
+    state ^= state << 13;
+    state ^= state >> 7;
+    state ^= state << 17;
+    return state;
+}
+
+/**
+ * Fast random calculation avoiding modulo division by constraining to a range of powers of 2
+ */
+
+std::uint32_t bounded_rand32(std::uint32_t (*rng)(void), std::uint32_t range) {
+
+	/**
+	 * Get the first power of 2 exceeding the range
+	 */
+    std::uint32_t mask = ~std::uint32_t(0);
+    --range;
+    mask >>= clz(range | 1);
+
+    /**
+     * Perform modulo within the range through bitwise AND, but delete the numbers not in the range
+     */
+
+    std::uint32_t x;
+    do {
+        x = rng() & mask;
+    } while (x > range);
+
+    return x;
+}
+
+task &base_scheduler<scheduling_algorithms::lottery>::schedule(void) {
+
+	/**
+	 * If there are no tasks available, simply idle
+	 */
+
+	std::size_t num_avail = this->num_tasks;
+	if (num_avail == 0) {
+		this->current_process = &task::idle_hook;
+		return task::idle_hook;
 	}
+
+	/**
+	 * Update the sleep state of every task before considering what can be scheduled
+	 * We're also combining this with a calculation of the intervals since both are O(n)
+	 */
+
+	std::vector<std::uint16_t> intervals;				// Reserve a vector of intervals
+	intervals.reserve(num_avail);
+
+	std::uint16_t left = 0;
+	for (auto it = this->tasks.begin(); it < this->tasks.end(); ++it) {	// Loop through, check status and update
+		task &t = *it;
+		t.update();
+
+		auto pri = t.get_priority();						// If the task is eligible to be scheduled, add the interval
+		if (!t.sleeping() && !t.blocking()) left += pri;
+		intervals.push_back(left);
+	}
+
+	const auto pool_size = left;
+	if (left == 0) {	// Check if any tasks are eligible
+		this->current_process = &task::idle_hook;
+		return task::idle_hook;
+	}
+
+	const auto roll = bounded_rand32(rand32, pool_size);	// Compute fast random modulus for the draw
+	auto it = std::lower_bound(intervals.begin(), intervals.end(), roll);	// Binary search to find the process
+	auto idx = it - intervals.begin();
+
+	this->current_process = this->tasks.data() + idx;		// Update and return
+	return this->tasks[idx];
 }
 
 /**

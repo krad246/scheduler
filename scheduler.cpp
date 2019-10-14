@@ -38,6 +38,7 @@ scheduler<alg>::scheduler(const std::initializer_list<task> &task_list) : base_s
 template <scheduling_algorithms alg>
 void scheduler<alg>::add_task(const task &t) {
 	base_scheduler<alg>::add_task(t); // Call super.add()
+	this->num_tasks++;
 }
 
 /**
@@ -47,6 +48,7 @@ void scheduler<alg>::add_task(const task &t) {
 template <scheduling_algorithms alg>
 void scheduler<alg>::cleanup(const task &t) {
 	base_scheduler<alg>::cleanup(t); // Call super.cleanup()
+	this->num_tasks--;
 }
 
 extern void driver_init(void);								// Driver initialization function provided by user

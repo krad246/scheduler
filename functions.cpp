@@ -11,7 +11,7 @@
  * Must reference the selected scheduler here
  */
 
-extern scheduler<scheduling_algorithms::round_robin> os;
+extern scheduler<scheduling_algorithms::lottery> os;
 
 /**
  * Include additional headers here

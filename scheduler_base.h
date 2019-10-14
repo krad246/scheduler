@@ -44,6 +44,9 @@ protected:
 	// Pointer to current process
 	task *current_process = nullptr;
 
+	// Number of tasks (avoid divisions & for scheduler information)
+	std::size_t num_tasks = 0;
+
 	// Pointer to top of OS-reserved stack
 #if defined(__LARGE_CODE_MODEL__) || defined(__LARGE_DATA_MODEL__)
 	std::uint32_t kstack_ptr = 0x0000;
@@ -106,9 +109,30 @@ public:
 
 template <>
 class base_scheduler<scheduling_algorithms::lottery> : public abstract_scheduler {
+public:
+
+	/**
+	 * Constructors to initialize member variables using an initializer list of tasks, etc.
+	 */
+
+	base_scheduler();
+	base_scheduler(const std::initializer_list<task> &task_list);
+
+
+	// Adds / removes task to / from process queue
+	void add_task(const task &t);
+	void cleanup(const task &t);
+
+	// Starts OS up once initialized correctly
+	void start(void);
+
+	// Schedules a process
+	task &schedule(void);
+
 private:
 
-	task &schedule(void);
+	// List of tasks
+	std::vector<task> tasks;
 };
 
 

@@ -8,7 +8,7 @@
 #include <print.h>
 #include <scheduler.h>
 
-extern scheduler<scheduling_algorithms::round_robin> os;
+extern scheduler<scheduling_algorithms::lottery> os;
 
 ring_buffer<char> rx_fifo(16);
 ring_buffer<char> tx_fifo(4);

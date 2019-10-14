@@ -3,7 +3,7 @@
 #include <scheduler.h>
 #include <print.h>
 
-extern scheduler<scheduling_algorithms::round_robin> os;
+extern scheduler<scheduling_algorithms::lottery> os;
 
 // Configure the scheduler timer interrupt
 void watchdog_init(void) {

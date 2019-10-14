@@ -32,12 +32,12 @@ inline void ring_buffer<T>::put(T item) {
 	buf_[head_] = item;	// Write data
 
 	if (full_) {	// If full, must drop the oldest element
-		tail_ = (tail_ + 1) % max_size_;
+		if (++tail_ == max_size_) tail_ = 0;	// Modulo increment
 	}
 
-	head_ = (head_ + 1) % max_size_;	// Advance head pointer to signify push
+	if (++head_ == max_size_) head_ = 0; 		// Modulo increment
 
-	full_ = head_ == tail_;	// Update status
+	full_ = (head_ == tail_);	// Update status
 }
 
 template <class T>
@@ -49,7 +49,7 @@ inline T ring_buffer<T>::get() {
 	// Read data and advance the tail (we now have a free space)
 	auto val = buf_[tail_];
 	full_ = false;
-	tail_ = (tail_ + 1) % max_size_;
+	if (++tail_ == max_size_) tail_ = 0;	// Modulo increment
 
 	return val;
 }
