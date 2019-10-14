@@ -13,5 +13,3 @@
  */
 
 scheduler<scheduling_algorithms::round_robin> os;
-
-
