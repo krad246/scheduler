@@ -313,7 +313,7 @@ std::uint32_t bounded_rand32(std::uint32_t (*rng)(void), std::uint32_t range) {
     std::uint32_t x;
     do {
         x = rng() & mask;
-    } while (x > range);
+    } while (x >= range);
 
     return x;
 }
@@ -336,7 +336,7 @@ task &base_scheduler<scheduling_algorithms::lottery>::schedule(void) {
 	 */
 
 	std::vector<std::uint16_t> intervals;				// Reserve a vector of intervals
-	intervals.reserve(num_avail);
+	intervals.reserve(num_avail);	intervals.push_back(0);
 
 	std::uint16_t left = 0;
 	for (auto it = this->tasks.begin(); it < this->tasks.end(); ++it) {	// Loop through, check status and update
@@ -349,16 +349,16 @@ task &base_scheduler<scheduling_algorithms::lottery>::schedule(void) {
 	}
 
 	const auto pool_size = left;
-	if (left == 0) {	// Check if any tasks are eligible
+	if (pool_size == 0) {	// Check if any tasks are eligible
 		this->current_process = &task::idle_hook;
 		return task::idle_hook;
 	}
 
 	const auto roll = bounded_rand32(rand32, pool_size);	// Compute fast random modulus for the draw
 	auto it = std::upper_bound(intervals.begin(), intervals.end(), roll);	// Binary search to find the process
-	auto idx = it - intervals.begin();
+	auto idx = it - (intervals.begin() + 1);	// Get first element less than or equal to the roll
 
-	this->current_process = this->tasks.data() + idx;		// Update and return
+	this->current_process = this->tasks.data() + idx;		// Index is off by 1, update and return
 	return this->tasks[idx];
 }
 

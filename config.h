@@ -55,27 +55,27 @@ constexpr const struct task_config task_cfgs[] = {
 		{
 				.func = bar,
 				.stack_size = 32,
-				.priority = 1
+				.priority = 2
 		},
 		{
 				.func = printer1,
 				.stack_size = 32,
-				.priority = 1,
+				.priority = 3,
 		},
 		{
 				.func = printer2,
 				.stack_size = 32,
-				.priority = 1,
+				.priority = 4,
 		},
 		{
 				.func = printer3,
 				.stack_size = 32,
-				.priority = 1,
+				.priority = 3,
 		},
 		{
 				.func = printer4,
 				.stack_size = 32,
-				.priority = 1,
+				.priority = 2,
 		},
 		{
 				.func = fib,
