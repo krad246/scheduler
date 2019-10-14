@@ -19,17 +19,19 @@
 ;*                .int   PC
 ;*
 ;****************************************************************************
-		.cdecls C, LIST, "msp430f5529.h"
-     	.global	ctx_save,_ctx_save
+
+	.global wdt_reload
+
+	.global	ctx_save,_ctx_save
 
 	.text
 	.align 2
 
-     .if $DEFINED(__LARGE_CODE_MODEL__)
-        .asg  4, RETADDRSZ
-     .else
-        .asg  2, RETADDRSZ
-     .endif
+	 .if $DEFINED(__LARGE_CODE_MODEL__)
+	    .asg  4, RETADDRSZ
+	 .else
+	    .asg  2, RETADDRSZ
+	 .endif
 
 	.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
 ctx_save: .asmfunc stack_usage(RETADDRSZ)
@@ -49,10 +51,10 @@ _ctx_save:
           MOV.W  #0,R12
           RETA
 	.else
-	  MOV.W  @SP,32(R12)
-	  ADDX.A #2,28(R12)
-	  MOV.W	 #0,R12
-	  RET
+		  MOV.W  @SP,32(R12)
+		  ADDX.A #2,28(R12)
+		  MOV.W	 #0,R12
+		  RET
 	.endif
 	.else
 ctx_save: .asmfunc stack_usage(RETADDRSZ)
@@ -83,7 +85,7 @@ _ctx_save:
 ;*                 setjmp invocation which built the "env" buffer.
 ;*				   Finally, reload the status register before jumping.
 ;****************************************************************************
-          .global	ctx_load
+	.global	ctx_load
 
 	.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
 ctx_load: .asmfunc stack_usage(RETADDRSZ)
@@ -102,8 +104,12 @@ ctx_load: .asmfunc stack_usage(RETADDRSZ)
 	      MOV.W  32(R12), R14
 	.endif
 
+		  CALLA    #wdt_reload	; reset the watchdog timer for a new time slice
+
+		  NOP
 		  EINT						; enable interrupts for next switch
-		  BIC.W   #1, &SFRIFG1		; disable watchdog timer interrupt?
+		  NOP
+
 	.if $DEFINED(__LARGE_CODE_MODEL__)
 end:      BRA     R14				; jump to runnable
 	.else
@@ -122,14 +128,15 @@ ctx_load: .asmfunc stack_usage(RETADDRSZ)
           MOV.W   14(R12), SP
 		  MOV.W   16(R12), R14
 
+		  CALL    #wdt_reload	; reset the watchdog timer for a new time slic
+		  NOP
 		  EINT						; enable interrupts for next switch
-		  BIC.W   #1, &SFRIFG1		; disable watchdog timer interrupt?
+		  NOP
 
 end:      BR      R14
 	.endif
 
           .endasmfunc
-
 
 ;******************************************************************************
 ;* BUILD ATTRIBUTES                                                           *

@@ -313,7 +313,7 @@ std::uint32_t bounded_rand32(std::uint32_t (*rng)(void), std::uint32_t range) {
     std::uint32_t x;
     do {
         x = rng() & mask;
-    } while (x >= range);
+    } while (x > range);
 
     return x;
 }
@@ -336,26 +336,27 @@ task &base_scheduler<scheduling_algorithms::lottery>::schedule(void) {
 	 */
 
 	std::vector<std::uint16_t> intervals;									// Reserve a vector of intervals
-	intervals.reserve(num_avail);
+	intervals.reserve(num_avail + 1);
 	intervals.push_back(0);													// Start of the interval list is 0; list generated is [0, sum(valid priorities))
 
-	volatile std::uint16_t left = 0;
+	std::uint16_t left = 0;
 	for (auto it = this->tasks.begin(); it < this->tasks.end(); ++it) {		// Loop through, check status and update
 		task &t = *it;
 		t.update();
 
 		auto pri = t.get_priority();										// If the task is eligible to be scheduled, add the interval
 		if (!t.sleeping() && !t.blocking()) left += pri;
-		intervals.push_back(*(std::uint16_t*)&left);
+		intervals.push_back(left);
 	}
 
-	const auto pool_size = left;
+	volatile const auto pool_size = left;
 	if (pool_size == 0) {													// Check if any tasks are eligible
 		this->current_process = &task::idle_hook;
 		return task::idle_hook;
 	}
 
-	volatile const auto roll = bounded_rand32(rand32, pool_size);					// Compute fast random modulus for the draw
+	const auto roll = bounded_rand32(rand32, pool_size);					// Compute fast random modulus for the draw
+//	const auto roll = std::uint32_t(rand16()) * std::uint32_t(pool_size) >> 16;
 	auto it = std::upper_bound(intervals.begin(), intervals.end(), roll);	// Binary search to find the process
 	volatile auto idx = it - (intervals.begin() + 1);								// Get first element less than or equal to the roll; see std::upper_bound documentation
 

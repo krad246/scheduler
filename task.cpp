@@ -155,6 +155,7 @@ void task::update(void) {
 
 void task::refresh(void) {
 	_disable_interrupt();
+
 #ifdef DEBUG_MODE
 	this->info.stack_usage = this->get_stack_usage();
 #endif

@@ -1,1 +1,1 @@
-"./config.obj" "./ctx_swtch.obj" "./functions.obj" "./handler.obj" "./main.obj" "./print.obj" "./ring_buffer.obj" "./scheduler.obj" "./scheduler_base.obj" "./task.obj" "../lnk_msp430f5529.cmd" -llibmath.a -llibc.a 
+"./config.obj" "./ctx_swtch.obj" "./functions.obj" "./handler.obj" "./main.obj" "./print.obj" "./ring_buffer.obj" "./scheduler.obj" "./scheduler_base.obj" "./task.obj" "./watchdog.obj" "../lnk_msp430f5529.cmd" -llibmath.a -llibc.a 

@@ -123,9 +123,7 @@ void uart_init(void) {
  **/
 
 void uart_puts(char *s) {
-	_disable_interrupt();
 	for (char *p = s; *p != 0; p++) uart_putc(*p);
-	_enable_interrupt();
 }
 
 /**
@@ -151,11 +149,8 @@ void uart_putc(unsigned b) {
 //		uart_send_byte(b);
 //	}
 //	_enable_interrupt();
-	_disable_interrupt();
 	while (UCA1STAT & UCBUSY);
-
 	uart_send_byte(b);
-	_enable_interrupt();
 }
 
 /**
@@ -207,8 +202,7 @@ static void puth(unsigned n) {
 	uart_putc(hex[n & 15]);
 }
 
-void uart_printf(char *format, ...)
-{
+void uart_printf(char *format, ...) {
 	char c;
 	int i;
 	long n;
