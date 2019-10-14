@@ -30,10 +30,7 @@ std::int16_t foo(void) {
 	while (1) {
 		P1OUT ^= BIT0;
 		uart_printf("foo: %u\r\n", os.get_thread_state().ticks);
-//		if (cnt++ == 20) {
-//			uart_printf("foo: kill requested\r\n", os.get_thread_state().ticks);
-//			os.ret();
-//		}
+
 		os.sleep(32);
 	}
 }

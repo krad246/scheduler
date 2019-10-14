@@ -134,7 +134,9 @@ task &base_scheduler<scheduling_algorithms::round_robin>::schedule(void) {
 	 */
 
 	for (auto it = tasks.begin(); it < tasks.end(); ++it) {
-		it->first.update();
+		std::pair<task, std::uint8_t> &proc = *it;
+		task &t = proc.first;
+		t.update();
 	}
 
 	/**
