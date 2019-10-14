@@ -19,6 +19,7 @@
 ;*                .int   PC
 ;*
 ;****************************************************************************
+		.cdecls C, LIST, "msp430f5529.h"
      	.global	ctx_save,_ctx_save
 
 	.text
@@ -102,7 +103,7 @@ ctx_load: .asmfunc stack_usage(RETADDRSZ)
 	.endif
 
 		  EINT						; enable interrupts for next switch
-
+		  BIC.W   #1, &SFRIFG1		; disable watchdog timer interrupt?
 	.if $DEFINED(__LARGE_CODE_MODEL__)
 end:      BRA     R14				; jump to runnable
 	.else
@@ -120,7 +121,10 @@ ctx_load: .asmfunc stack_usage(RETADDRSZ)
           MOV.W   12(R12), R10
           MOV.W   14(R12), SP
 		  MOV.W   16(R12), R14
-		  EINT
+
+		  EINT						; enable interrupts for next switch
+		  BIC.W   #1, &SFRIFG1		; disable watchdog timer interrupt?
+
 end:      BR      R14
 	.endif
 

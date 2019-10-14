@@ -55,8 +55,6 @@ extern void driver_init(void);								// Driver initialization function provided
 
 template <scheduling_algorithms alg>
 void scheduler<alg>::init(void) {
-	_disable_interrupt();	// Enter critical section
-
 	driver_init();	// Initialize the hardware
 
 	/**
@@ -68,8 +66,6 @@ void scheduler<alg>::init(void) {
 	for (struct task_config *it = const_cast<struct task_config *>(task_cfgs); it < end_pt; ++it) {
 		this->add_task(task(it->func, it->stack_size, it->priority));
 	}
-
-	_enable_interrupt();
 }
 
 /**
@@ -80,7 +76,6 @@ extern void watchdog_init(void);
 
 template <scheduling_algorithms alg>
 void scheduler<alg>::start(void) {
-	_disable_interrupt();
 
 	// Perform any additional initializations, if needed, in the superclass
 	base_scheduler<alg>::start();

@@ -128,6 +128,7 @@ task &task::operator=(const task &other) {
  * Context switching function which activates a new process
  */
 
+extern void watchdog_suspend(void);
 void task::load(void) {
 	// Increase run count
 	this->info.ticks++;
