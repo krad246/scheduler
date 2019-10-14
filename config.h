@@ -48,7 +48,48 @@ struct task_config {
 	std::uint8_t priority;
 };
 
-extern struct task_config task_cfgs[];
+/**
+ * Populate this list with the configurations of each task
+ */
+
+constexpr const struct task_config task_cfgs[] = {
+		{
+				.func = foo,
+				.stack_size = 32,
+				.priority = 1
+		},
+		{
+				.func = bar,
+				.stack_size = 32,
+				.priority = 1
+		},
+		{
+				.func = printer1,
+				.stack_size = 32,
+				.priority = 1,
+		},
+		{
+				.func = printer2,
+				.stack_size = 32,
+				.priority = 1,
+		},
+		{
+				.func = printer3,
+				.stack_size = 32,
+				.priority = 1,
+		},
+		{
+				.func = printer4,
+				.stack_size = 32,
+				.priority = 1,
+		},
+		{
+				.func = fib,
+				.stack_size = 32,
+				.priority = 1,
+
+		}
+};
 
 /**
  * List of available scheduling algorithms

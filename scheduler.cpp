@@ -50,7 +50,6 @@ void scheduler<alg>::cleanup(const task &t) {
 }
 
 extern void driver_init(void);								// Driver initialization function provided by user
-extern struct task_config task_cfgs[num_tasks_declared];	// List of tasks and associated configurations as provided by user
 
 template <scheduling_algorithms alg>
 void scheduler<alg>::init(void) {
@@ -62,8 +61,9 @@ void scheduler<alg>::init(void) {
 	 * Iterate through the task list and add it to the underlying process container
 	 */
 
-	struct task_config *end_pt = task_cfgs + sizeof(task_cfgs) / sizeof(struct task_config);
-	for (struct task_config *it = task_cfgs; it < end_pt; ++it) {
+	constexpr auto num_cfgs = sizeof(task_cfgs) / sizeof(struct task_config);
+	const struct task_config *end_pt = task_cfgs + num_cfgs;
+	for (struct task_config *it = const_cast<struct task_config *>(task_cfgs); it < end_pt; ++it) {
 		this->add_task(task(it->func, it->stack_size, it->priority));
 	}
 

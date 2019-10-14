@@ -83,11 +83,9 @@ task::task(std::int16_t (*runnable)(void), std::size_t stack_size, std::uint8_t 
 	 */
 
 #if defined(__LARGE_CODE_MODEL__) || defined(__LARGE_DATA_MODEL__)
-	this->context[9] = GIE;
 	this->context[8] = reinterpret_cast<std::uint32_t>(runnable);
 	this->context[7] = stack_base(this);
 #else
-	this->context[9] = GIE;
 	this->context[8] = reinterpret_cast<std::uint16_t>(runnable);
 	this->context[7] = stack_base(this);
 #endif

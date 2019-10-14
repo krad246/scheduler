@@ -46,8 +46,8 @@ All measurements below were conducted with the time slice set to 16 ms.
 ## Low memory overhead
 | Code / Data Model | Memory Usage (B) |
 |---|---|
-| Small | 38 |
-| Large | 62 |
+| Small | 36 |
+| Large | 58 |
 
 ## Configurability
 - Tasks have configurable stack sizes and priority levels.

@@ -18,9 +18,9 @@
 class task;
 
 #if defined(__LARGE_CODE_MODEL__) || defined(__LARGE_DATA_MODEL__)
-	using ctx = std::uint32_t[10];
+	using ctx = std::uint32_t[9];
 #else
-	using ctx = std::uint16_t[10];
+	using ctx = std::uint16_t[9];
 #endif
 
 extern "C" int ctx_save(ctx env);
@@ -126,7 +126,6 @@ private:
 	 * Thread context block
 	 */
 
-//	std::jmp_buf context;
 	ctx context;
 
 	/**
@@ -175,25 +174,21 @@ __attribute__((always_inline)) inline void task::pause(void) {
 	// Fetches bytes of pushed PC words
 	const register std::uint16_t *stack_top = reinterpret_cast<std::uint16_t *>(__get_SP_register());
 	const register std::uint16_t top_pc_bits = (*(stack_top) & 0xF000) >> 12;
-	const register std::uint16_t sr = (*stack_top) & 0x01FF;
 
 	// Rolls back stack to deallocate words
 	__set_SP_register(__get_SP_register() + 4);
 
 	// Writes pushed PC from interrupt into TCB as pointer to next normal instruction and SP for proper SP location
-	this->context[9] = sr;
 	this->context[8] = static_cast<std::uint32_t>(top_pc_bits) << 16 | *(stack_top + 1);
 	this->context[7] = __get_SP_register();
 #else
 	// Fetches bytes of pushed PC words
 	const register std::uint16_t *stack_top = reinterpret_cast<std::uint16_t *>(__get_SP_register());
-	const register std::uint8_t sr = (*stack_top) & 0x01FF;
 
 	// Rolls back stack to deallocate words
 	__set_SP_register(__get_SP_register() + 4);
 
 	// Writes pushed PC from interrupt into TCB as pointer to next normal instruction and SP for proper SP location
-	this->context[9] = sr;
 	this->context[8] = *(stack_top + 1);
 	this->context[7] = __get_SP_register();
 #endif

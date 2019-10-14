@@ -17,7 +17,6 @@
 ;*                .int   R10
 ;*                .int   SP
 ;*                .int   PC
-;*				  .int   SR
 ;*
 ;****************************************************************************
      	.global	ctx_save,_ctx_save
@@ -102,7 +101,7 @@ ctx_load: .asmfunc stack_usage(RETADDRSZ)
 	      MOV.W  32(R12), R14
 	.endif
 
-		  MOVA   36(R12), SR		; set SR (EINT + whatever else), next instruction is always executed before interrupt
+		  EINT						; enable interrupts for next switch
 
 	.if $DEFINED(__LARGE_CODE_MODEL__)
 end:      BRA     R14				; jump to runnable
@@ -121,7 +120,7 @@ ctx_load: .asmfunc stack_usage(RETADDRSZ)
           MOV.W   12(R12), R10
           MOV.W   14(R12), SP
 		  MOV.W   16(R12), R14
-		  MOV.W   18(R12), SR
+		  EINT
 end:      BR      R14
 	.endif
 
