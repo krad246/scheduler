@@ -90,12 +90,15 @@ void base_scheduler<scheduling_algorithms::round_robin>::add_task(const task &t)
  */
 
 void base_scheduler<scheduling_algorithms::round_robin>::cleanup(const task &t) {
-	auto it = std::find_if(this->tasks.begin(), this->tasks.end(), [&](const std::pair<task, std::uint8_t>& element) {
-		return element.first == t;
-	});
+	auto it = std::remove_if(
+		this->tasks.begin(),
+		this->tasks.end(),
+		[&](const std::pair<task, std::uint8_t>& element) {
+			return element.first == t;
+		}
+	);
 
 	if (it == this->tasks.end()) return;
-
 	this->tasks.erase(it);
 }
 

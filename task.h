@@ -10,7 +10,6 @@
 
 #include <msp430.h>
 
-#include <csetjmp>
 #include <cstdint>
 
 #include <memory>
@@ -18,12 +17,21 @@
 
 class task;
 
+#if defined(__LARGE_CODE_MODEL__) || defined(__LARGE_DATA_MODEL__)
+	using ctx = std::uint32_t[10];
+#else
+	using ctx = std::uint16_t[10];
+#endif
+
+extern "C" int ctx_save(ctx env);
+extern "C" void ctx_load(ctx env);
+
 /**
  * Resource monitoring struct for task
  */
 
 struct thread_info {
-	std::int16_t id;
+	std::uint16_t id;
 	std::uint8_t priority;
 
 	std::size_t stack_size;
@@ -76,16 +84,16 @@ public:
 	void unblock(void);
 	void ret(void);
 
-	/**
-	 * State information retrieval functions
-	 */
+	std::uint16_t get_tid(void) const;
+	std::uint8_t get_priority(void) const;
+	std::size_t get_stack_size(void) const;
+	std::size_t get_run_count(void) const;
+	std::size_t get_stack_usage(void) const;
 
-	std::uint16_t get_latest_sp(void) const;
-	std::uint8_t get_priority() const;
-	const thread_info &get_state(void) const;
 	bool sleeping(void) const;
 	bool blocking(void) const;
 	bool complete(void) const;
+	const thread_info &get_state(void) const;
 
 	/**
 	 * Idle hook which is called when no tasks are available to run
@@ -118,7 +126,8 @@ private:
 	 * Thread context block
 	 */
 
-	std::jmp_buf context;
+//	std::jmp_buf context;
+	ctx context;
 
 	/**
 	 * Resource monitor struct
@@ -131,6 +140,20 @@ private:
 	 */
 
 	std::int16_t (*runnable)(void) = nullptr;
+
+	/**
+	 * State information retrieval functions
+	 */
+
+#if defined(__LARGE_CODE_MODEL__) || defined(__LARGE_DATA_MODEL__)
+	std::uint32_t get_task_sp(void) const;
+	static std::uint32_t stack_base(const task *t);
+	static void set_task_sp(task *t, std::uint32_t val);
+#else
+	std::uint16_t get_task_sp(void) const;
+	static std::uint16_t stack_base(const task *t);
+	static void set_task_sp(task *t, std::uint16_t val);
+#endif
 };
 
 
@@ -142,22 +165,38 @@ private:
 __attribute__((always_inline)) inline void task::pause(void) {
 
 	// Save task context
-	setjmp(this->context);
+	ctx_save(this->context);
 
 	/**
 	 * Interrupt pushes PC + SR to stack, must retrieve them, store them in the TCB and unroll the stack
 	 */
 
+#if defined(__LARGE_CODE_MODEL__) || defined(__LARGE_DATA_MODEL__)
 	// Fetches bytes of pushed PC words
 	const register std::uint16_t *stack_top = reinterpret_cast<std::uint16_t *>(__get_SP_register());
-	const register std::uint16_t top_bits = (*(stack_top) & 0xF000) >> 12;
+	const register std::uint16_t top_pc_bits = (*(stack_top) & 0xF000) >> 12;
+	const register std::uint8_t sr = (*stack_top) & 0x01FF;
 
 	// Rolls back stack to deallocate words
 	__set_SP_register(__get_SP_register() + 4);
 
 	// Writes pushed PC from interrupt into TCB as pointer to next normal instruction and SP for proper SP location
-	this->context[8] = static_cast<std::uint32_t>(top_bits) << 16 | *(stack_top + 1);
+	this->context[9] = sr;
+	this->context[8] = static_cast<std::uint32_t>(top_pc_bits) << 16 | *(stack_top + 1);
 	this->context[7] = __get_SP_register();
+#else
+	// Fetches bytes of pushed PC words
+	const register std::uint16_t *stack_top = reinterpret_cast<std::uint16_t *>(__get_SP_register());
+	const register std::uint8_t sr = (*stack_top) & 0x01FF;
+
+	// Rolls back stack to deallocate words
+	__set_SP_register(__get_SP_register() + 4);
+
+	// Writes pushed PC from interrupt into TCB as pointer to next normal instruction and SP for proper SP location
+	this->context[9] = sr;
+	this->context[8] = *(stack_top + 1);
+	this->context[7] = __get_SP_register();
+#endif
 }
 
 #endif /* TASK_H_ */

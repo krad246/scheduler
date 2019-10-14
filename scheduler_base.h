@@ -45,7 +45,11 @@ protected:
 	task *current_process = nullptr;
 
 	// Pointer to top of OS-reserved stack
+#if defined(__LARGE_CODE_MODEL__) || defined(__LARGE_DATA_MODEL__)
+	std::uint32_t kstack_ptr = 0x0000;
+#else
 	std::uint16_t kstack_ptr = 0x0000;
+#endif
 
 	// Queue of interrupts waiting to be scheduled
 	ring_buffer<isr> isr_wait_queue;

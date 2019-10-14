@@ -12,8 +12,6 @@ void driver_init(void) {
 int main(void) {
 	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
 
-//	driver_init();
-
 	os.init();
 	os.start();
 	return 0;

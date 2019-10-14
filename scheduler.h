@@ -61,8 +61,14 @@ public:
 	inline void context_switch(void);
 	inline void save_context(void);
 	inline void restore_context(task &runnable);
+
+#if defined(__LARGE_CODE_MODEL__) || defined(__LARGE_DATA_MODEL__)
 	inline std::uint32_t enter_kstack(void);
 	inline void leave_kstack(const std::uint32_t sp);
+#else
+	inline std::uint16_t enter_kstack(void);
+	inline void leave_kstack(const std::uint16_t sp);
+#endif
 
 	/**
 	 * Function that actually schedules a new task

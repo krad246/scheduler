@@ -19,8 +19,12 @@ CPP_SRCS += \
 CMD_SRCS += \
 ../lnk_msp430f5529.cmd 
 
+ASM_SRCS += \
+../ctx_swtch.asm 
+
 OBJS += \
 ./config.obj \
+./ctx_swtch.obj \
 ./functions.obj \
 ./handler.obj \
 ./main.obj \
@@ -29,6 +33,9 @@ OBJS += \
 ./scheduler.obj \
 ./scheduler_base.obj \
 ./task.obj 
+
+ASM_DEPS += \
+./ctx_swtch.d 
 
 CPP_DEPS += \
 ./config.d \
@@ -43,6 +50,7 @@ CPP_DEPS += \
 
 OBJS__QUOTED += \
 "config.obj" \
+"ctx_swtch.obj" \
 "functions.obj" \
 "handler.obj" \
 "main.obj" \
@@ -63,6 +71,9 @@ CPP_DEPS__QUOTED += \
 "scheduler_base.d" \
 "task.d" 
 
+ASM_DEPS__QUOTED += \
+"ctx_swtch.d" 
+
 CPP_SRCS__QUOTED += \
 "../config.cpp" \
 "../functions.cpp" \
@@ -72,5 +83,8 @@ CPP_SRCS__QUOTED += \
 "../scheduler.cpp" \
 "../scheduler_base.cpp" \
 "../task.cpp" 
+
+ASM_SRCS__QUOTED += \
+"../ctx_swtch.asm" 
 
 

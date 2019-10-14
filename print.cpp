@@ -38,10 +38,10 @@ __attribute__((interrupt)) void USCI_A1_ISR(void) {
 			uart_send_byte(recv);
 			P1OUT &= ~BIT0;
 
-			if (rx_fifo.full() && !rx_scheduled) {
-				os.schedule_interrupt((isr) uart_rx_task); // when max(character requests) received, then schedule the rx task
-				rx_scheduled = true;
-			}
+//			if (rx_fifo.full() && !rx_scheduled) {
+//				os.schedule_interrupt((isr) uart_rx_task); // when max(character requests) received, then schedule the rx task
+//				rx_scheduled = true;
+//			}
 			break;
 		}
 
@@ -55,6 +55,7 @@ __attribute__((interrupt)) void USCI_A1_ISR(void) {
 				UCA1IE &= ~UCTXIE;
 				UCA1IFG &= ~UCTXIFG;
 			}
+
 			break;
 		}
 
@@ -122,7 +123,9 @@ void uart_init(void) {
  **/
 
 void uart_puts(char *s) {
+	_disable_interrupt();
 	for (char *p = s; *p != 0; p++) uart_putc(*p);
+	_enable_interrupt();
 }
 
 /**
@@ -130,17 +133,28 @@ void uart_puts(char *s) {
  **/
 
 void uart_putc(unsigned b) {
-	if (tx_fifo.full()) {
-		if (!tx_scheduled) {
-			os.schedule_interrupt((isr) uart_tx_task);
-			tx_scheduled = true;
-		}
-	}
-
-	while (tx_fifo.full());
-
+//	if (tx_fifo.full()) {
+//		if (!tx_scheduled) {
+//			os.schedule_interrupt((isr) uart_tx_task);
+//			tx_scheduled = true;
+//		}
+//	}
+//
+//	while (tx_fifo.full());
+//
+//	_disable_interrupt();
+//	tx_fifo.put(b);
+//	if (tx_fifo.full()) {
+//		_enable_interrupt();
+//		while (UCA1STAT & UCBUSY);
+//		UCA1IE |= UCTXIE;                         // Enable USCI_A0 TX interrupt
+//		uart_send_byte(b);
+//	}
+//	_enable_interrupt();
 	_disable_interrupt();
-	tx_fifo.put(b);
+	while (UCA1STAT & UCBUSY);
+
+	uart_send_byte(b);
 	_enable_interrupt();
 }
 
@@ -175,7 +189,6 @@ static void xtoa(unsigned long x, const unsigned long *dp) {
 			++dp;
 		do {
 			d = *dp++;
-			if (d == 0) break;
 			c = '0';
 			while (x >= d) {
 				++c;

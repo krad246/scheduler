@@ -34,7 +34,7 @@ decl_function(fib);
  * Count number of declared tasks
  */
 
-#define num_tasks_declared 4
+#define num_tasks_declared 7
 
 /**
  * Struct declaration for task customization array

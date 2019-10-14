@@ -64,8 +64,10 @@ void scheduler<alg>::init(void) {
 
 	struct task_config *end_pt = task_cfgs + sizeof(task_cfgs) / sizeof(struct task_config);
 	for (struct task_config *it = task_cfgs; it < end_pt; ++it) {
-		this->add_task(std::move(task(it->func, it->stack_size, it->priority)));
+		this->add_task(task(it->func, it->stack_size, it->priority));
 	}
+
+	_enable_interrupt();
 }
 
 /**
@@ -74,6 +76,8 @@ void scheduler<alg>::init(void) {
 
 template <scheduling_algorithms alg>
 void scheduler<alg>::start(void) {
+	_disable_interrupt();
+
 	// Perform any additional initializations, if needed, in the superclass
 	base_scheduler<alg>::start();
 
@@ -117,6 +121,7 @@ inline void scheduler<alg>::context_switch(void) {
 		if (this->get_current_process().complete()) {
 			this->cleanup(this->get_current_process());
 		}
+
 		this->restore_context(runnable);	// Select that process and load it
 	}
 }
@@ -139,6 +144,7 @@ inline void scheduler<alg>::restore_context(task &runnable) {
 	runnable.load();
 }
 
+#if defined(__LARGE_CODE_MODEL__) || defined(__LARGE_DATA_MODEL__)
 /**
  * Switches to the OS-reserved stack by switching to the top of its stack
  */
@@ -158,6 +164,27 @@ template <scheduling_algorithms alg>
 inline void scheduler<alg>::leave_kstack(const std::uint32_t new_sp) {
 	_set_SP_register(new_sp);
 }
+#else
+/**
+ * Switches to the OS-reserved stack by switching to the top of its stack
+ */
+
+template <scheduling_algorithms alg>
+inline std::uint16_t scheduler<alg>::enter_kstack(void) {
+	register std::uint16_t sp_backup = _get_SP_register();
+	_set_SP_register(this->kstack_ptr);
+	return sp_backup;
+}
+
+/**
+ * Returns back to the current process' most recent top of stack
+ */
+
+template <scheduling_algorithms alg>
+inline void scheduler<alg>::leave_kstack(const std::uint16_t new_sp) {
+	_set_SP_register(new_sp);
+}
+#endif
 
 /**
  * Calls the underlying scheduler implementation to determine a task
@@ -198,9 +225,9 @@ void scheduler<alg>::refresh(void) {
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::request_preemption(void) {
 	// Set preemption flag and wait for interrupts
-	_disable_interrupt();
+//	_disable_interrupt();
 	SFRIFG1 |= WDTIFG;
-	_enable_interrupt();
+//	_enable_interrupt();
 }
 
 template <scheduling_algorithms alg>
