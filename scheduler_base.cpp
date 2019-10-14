@@ -165,6 +165,7 @@ task &base_scheduler<scheduling_algorithms::round_robin>::schedule(void) {
 			}
 		} else {
 			num_avail--;
+			proc.second = t.get_priority();
 		}
 
 		/**
