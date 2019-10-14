@@ -34,18 +34,18 @@
 	.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
 ctx_save: .asmfunc stack_usage(RETADDRSZ)
 _ctx_save:
-          MOVA   R4,0(R12)
-          MOVA   R5,4(R12)
-          MOVA   R6,8(R12)
-          MOVA   R7,12(R12)
-          MOVA   R8,16(R12)
-          MOVA   R9,20(R12)
-          MOVA   R10,24(R12)
-          MOVA   SP,28(R12)
+          MOVA   R4, 0(R12)			; save R4
+          MOVA   R5, 4(R12)			; save R5
+          MOVA   R6, 8(R12)			; save R6
+          MOVA   R7, 12(R12)		; save R7
+          MOVA   R8, 16(R12)		; save R8
+          MOVA   R9, 20(R12)		; save R9
+          MOVA   R10, 24(R12)		; save R10
+          MOVA   SP, 28(R12)		; save SP
 
 	.if $DEFINED(__LARGE_CODE_MODEL__)
           MOVX.A @SP,32(R12)
-          ADDX.A #4,28(R12)        ; Increment saved SP by four ("pop" PC)
+          ADDX.A #4,28(R12)        	; Increment saved SP by four ("pop" PC)
           MOV.W  #0,R12
           RETA
 	.else
@@ -87,25 +87,25 @@ _ctx_save:
 
 	.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
 ctx_load: .asmfunc stack_usage(RETADDRSZ)
-          MOVA   0(R12), R4
-          MOVA   4(R12), R5
-          MOVA   8(R12), R6
-          MOVA   12(R12), R7
-          MOVA   16(R12), R8
-          MOVA   20(R12), R9
-          MOVA   24(R12), R10
-          MOVA   28(R12), SP
+          MOVA   0(R12), R4			; load R4
+          MOVA   4(R12), R5			; load R5
+          MOVA   8(R12), R6			; load R6
+          MOVA   12(R12), R7		; load R7
+          MOVA   16(R12), R8		; load R8
+          MOVA   20(R12), R9		; load R9
+          MOVA   24(R12), R10		; load R10
+          MOVA   28(R12), SP		; load SP
 
-	.if $DEFINED(__LARGE_CODE_MODEL__)
+	.if $DEFINED(__LARGE_CODE_MODEL__)	; fetch PC addr to jump to
           MOVA   32(R12), R14
 	.else
 	      MOV.W  32(R12), R14
 	.endif
 
-		  MOVA   SR, 36(R12)
+		  MOVA   36(R12), SR		; set SR (EINT + whatever else), next instruction is always executed before interrupt
 
 	.if $DEFINED(__LARGE_CODE_MODEL__)
-end:      BRA     R14
+end:      BRA     R14				; jump to runnable
 	.else
 end:      BR      R14
 	.endif

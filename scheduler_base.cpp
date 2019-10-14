@@ -130,6 +130,14 @@ task &base_scheduler<scheduling_algorithms::round_robin>::schedule(void) {
 	}
 
 	/**
+	 * Update the sleep state of every task before considering what can be scheduled
+	 */
+
+	for (auto it = tasks.begin(); it < tasks.end(); ++it) {
+		it->first.update();
+	}
+
+	/**
 	 * Otherwise, iterate sequentially, paying attention to the weights
 	 */
 
@@ -157,7 +165,6 @@ task &base_scheduler<scheduling_algorithms::round_robin>::schedule(void) {
 			}
 		} else {
 			num_avail--;
-			t.update();
 		}
 
 		/**

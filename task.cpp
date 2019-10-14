@@ -123,7 +123,6 @@ task &task::operator=(const task &other) {
 
 	// Apply this offset to MY base
 	set_task_sp(this, dst_stack_base - stack_usage_state);
-
 	return *this;
 }
 
@@ -169,7 +168,8 @@ void task::refresh(void) {
  */
 
 void task::sleep(const std::size_t ticks) {
-	this->info.sleep_ticks = ticks;
+	if (this->info.sleep_ticks > 0) return;
+	else this->info.sleep_ticks = ticks;
 }
 
 /**

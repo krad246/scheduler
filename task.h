@@ -175,7 +175,7 @@ __attribute__((always_inline)) inline void task::pause(void) {
 	// Fetches bytes of pushed PC words
 	const register std::uint16_t *stack_top = reinterpret_cast<std::uint16_t *>(__get_SP_register());
 	const register std::uint16_t top_pc_bits = (*(stack_top) & 0xF000) >> 12;
-	const register std::uint8_t sr = (*stack_top) & 0x01FF;
+	const register std::uint16_t sr = (*stack_top) & 0x01FF;
 
 	// Rolls back stack to deallocate words
 	__set_SP_register(__get_SP_register() + 4);

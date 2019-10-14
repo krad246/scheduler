@@ -49,7 +49,7 @@ void scheduler<alg>::cleanup(const task &t) {
 	base_scheduler<alg>::cleanup(t); // Call super.cleanup()
 }
 
-extern void driver_init(void);	// Driver initialization function provided by user
+extern void driver_init(void);								// Driver initialization function provided by user
 extern struct task_config task_cfgs[num_tasks_declared];	// List of tasks and associated configurations as provided by user
 
 template <scheduling_algorithms alg>
@@ -74,6 +74,8 @@ void scheduler<alg>::init(void) {
  *	Starts the OS assuming that it has been initialized
  */
 
+extern void watchdog_init(void);
+
 template <scheduling_algorithms alg>
 void scheduler<alg>::start(void) {
 	_disable_interrupt();
@@ -81,9 +83,7 @@ void scheduler<alg>::start(void) {
 	// Perform any additional initializations, if needed, in the superclass
 	base_scheduler<alg>::start();
 
-	// Configure the scheduler timer interrupt
-	WDTCTL = WDT_ADLY_16;
-	SFRIE1 |= WDTIE;
+	watchdog_init();
 
 	// Schedule and load the first task
 	task &first = this->schedule();
@@ -221,13 +221,11 @@ void scheduler<alg>::refresh(void) {
 /**
  * Requests scheduler to reschedule task
  */
+extern void watchdog_request(void);
 
 template <scheduling_algorithms alg>
 inline void scheduler<alg>::request_preemption(void) {
-	// Set preemption flag and wait for interrupts
-//	_disable_interrupt();
-	SFRIFG1 |= WDTIFG;
-//	_enable_interrupt();
+	watchdog_request();
 }
 
 template <scheduling_algorithms alg>

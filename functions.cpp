@@ -28,15 +28,13 @@ std::int16_t foo(void) {
 	P1OUT &= ~BIT0;
 	volatile int cnt = 0;
 	while (1) {
-//		os.refresh();
-
 		P1OUT ^= BIT0;
-		uart_printf("foo: %u\r\n", cnt);
-		if (cnt++ == 20) {
-			uart_printf("foo: kill requested\r\n", os.get_thread_state().ticks);
-			os.ret();
-		}
-//		os.sleep(32);
+		uart_printf("foo: %u\r\n", os.get_thread_state().ticks);
+//		if (cnt++ == 20) {
+//			uart_printf("foo: kill requested\r\n", os.get_thread_state().ticks);
+//			os.ret();
+//		}
+		os.sleep(32);
 	}
 }
 
@@ -45,56 +43,38 @@ std::int16_t bar(void) {
 	P4OUT &= ~BIT7;
 	volatile int cnt = 0;
 	while (1) {
-//		os.refresh();
-
 		P4OUT ^= BIT7;
-		uart_printf("bar: %u\r\n", cnt++);
-
-//		os.sleep(64);
+		uart_printf("bar: %u\r\n", os.get_thread_state().ticks);
+		os.sleep(64);
 	}
 }
 
 std::int16_t printer1(void) {
 	while (1) {
-//		os.refresh();
-
-
-//		os.sleep(1);
+		uart_printf("printer1: %u\r\n", os.get_thread_state().ticks);
 	}
 }
 
 std::int16_t printer2(void) {
 	while (1) {
-//		os.refresh();
-
-
-//		os.sleep(1);
+		uart_printf("printer2: %u\r\n", os.get_thread_state().ticks);
 	}
 }
 
 std::int16_t printer3(void) {
 	while (1) {
-//		os.refresh();
-
-
-//		os.sleep(1);
+		uart_printf("printer3: %u\r\n", os.get_thread_state().ticks);
 	}
 }
 
 std::int16_t printer4(void) {
 	while (1) {
-//		os.refresh();
-
-
-//		os.sleep(1);
+		uart_printf("printer4: %u\r\n", os.get_thread_state().ticks);
 	}
 }
 
 std::int16_t fib(void) {
 	while (1) {
-//		os.refresh();
-
-
-//		os.sleep(1);
+		uart_printf("fib: %u\r\n", os.get_thread_state().ticks);
 	}
 }
